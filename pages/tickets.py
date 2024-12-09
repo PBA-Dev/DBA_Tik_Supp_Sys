@@ -91,14 +91,17 @@ def render_tickets():
                 is_private = st.checkbox("Private Comment", key=f"private_{ticket['id']}")
                 if st.button("Add Comment", key=f"add_comment_{ticket['id']}"):
                     if new_comment:
-                        ticket_model.add_comment(
-                            ticket_id=ticket['id'],
-                            user_id=st.session_state.user['id'],
-                            content=new_comment,
-                            is_private=is_private
-                        )
-                        st.success("Comment added successfully")
-                        st.rerun()
+                        try:
+                            ticket_model.add_comment(
+                                ticket_id=ticket['id'],
+                                user_id=st.session_state.user['id'],
+                                content=new_comment,
+                                is_private=is_private
+                            )
+                            st.success("Comment added successfully")
+                            st.experimental_rerun()
+                        except Exception as e:
+                            st.error(f"Failed to add comment: {str(e)}")
                     else:
                         st.error("Please enter a comment")
                 
@@ -133,24 +136,29 @@ def render_tickets():
                         assigned_to = ticket['assigned_to']
                 
                 if st.button("Update", key=f"update_{ticket['id']}"):
-                    ticket_model.update_ticket(
-                        ticket['id'],
-                        status=new_status,
-                        priority=new_priority,
-                        assigned_to=assigned_to
-                    )
-                    
-                    # Notify ticket creator
-                    email_notifier.notify_ticket_updated(ticket, ticket['creator_email'])
-                    
-                    # Notify assigned agent if changed
-                    if assigned_to and assigned_to != ticket['assigned_to']:
-                        assigned_user = user_model.get_user_by_id(assigned_to)
-                        if assigned_user:
-                            email_notifier.notify_ticket_assigned(ticket, assigned_user['email'])
-                    
-                    st.success("Ticket updated successfully")
-                    st.rerun()
+                    try:
+                        # Update ticket first
+                        ticket_model.update_ticket(
+                            ticket['id'],
+                            status=new_status,
+                            priority=new_priority,
+                            assigned_to=assigned_to
+                        )
+                        
+                        # Handle notifications in try-except blocks to prevent blocking
+                        try:
+                            email_notifier.notify_ticket_updated(ticket, ticket['creator_email'])
+                            if assigned_to and assigned_to != ticket['assigned_to']:
+                                assigned_user = user_model.get_user_by_id(assigned_to)
+                                if assigned_user:
+                                    email_notifier.notify_ticket_assigned(ticket, assigned_user['email'])
+                        except Exception as e:
+                            st.warning(f"Ticket updated but notification failed: {str(e)}")
+                            
+                        st.success("Ticket updated successfully")
+                        st.experimental_rerun()
+                    except Exception as e:
+                        st.error(f"Failed to update ticket: {str(e)}")
     
     with tab2:
         st.subheader("Create New Ticket")
