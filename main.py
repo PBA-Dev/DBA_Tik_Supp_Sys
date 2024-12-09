@@ -1,5 +1,6 @@
 import streamlit as st
 from utils.auth import check_authentication, login_user, logout_user
+from models.user import User
 from pages.dashboard import render_dashboard
 from pages.tickets import render_tickets
 from pages.users import render_users
@@ -13,17 +14,39 @@ st.set_page_config(
 
 def main():
     if not check_authentication():
-        st.title("Login")
+        st.title("Support Ticket System")
         
-        email = st.text_input("Email")
-        password = st.text_input("Password", type="password")
+        tab1, tab2 = st.tabs(["Login", "Register"])
         
-        if st.button("Login"):
-            if login_user(email, password):
-                st.success("Login successful!")
-                st.rerun()
-            else:
-                st.error("Invalid credentials")
+        with tab1:
+            email = st.text_input("Email", key="login_email")
+            password = st.text_input("Password", type="password", key="login_password")
+            
+            if st.button("Login"):
+                if login_user(email, password):
+                    st.success("Login successful!")
+                    st.rerun()
+                else:
+                    st.error("Invalid credentials")
+                    
+        with tab2:
+            reg_email = st.text_input("Email", key="reg_email")
+            reg_password = st.text_input("Password", type="password", key="reg_password")
+            reg_role = "customer"  # Default role for new registrations
+            
+            if st.button("Register"):
+                if not reg_email or not reg_password:
+                    st.error("Please fill in all fields")
+                else:
+                    user_model = User()
+                    try:
+                        user_model.create_user(reg_email, reg_password, reg_role)
+                        st.success("Registration successful! Please login.")
+                    except Exception as e:
+                        if "duplicate key" in str(e):
+                            st.error("Email already registered")
+                        else:
+                            st.error("Registration failed")
     else:
         # Sidebar navigation
         st.sidebar.title("Navigation")
