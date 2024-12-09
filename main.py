@@ -27,6 +27,14 @@ footer {visibility: hidden;}
 div[data-testid="stToolbar"] {visibility: hidden;}
 div[data-testid="stDecoration"] {visibility: hidden;}
 div[data-testid="stStatusWidget"] {visibility: hidden;}
+.st-emotion-cache-1q2d4ya {display: none !important;}
+.eczjsme13 {display: none !important;}
+.main {visibility: hidden;}
+section[data-testid="stSidebar"] {
+    width: 250px;
+    background-color: #f0f2f6;
+}
+div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"] {display: none;}
 </style>
 """, unsafe_allow_html=True)
 
