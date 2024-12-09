@@ -1,0 +1,103 @@
+import streamlit as st
+from utils.auth import require_auth
+from models.ticket import Ticket
+from models.user import User
+from components.rich_text import create_rich_text_editor
+from components.file_handler import FileHandler
+from utils.email import EmailNotifier
+
+def render_tickets():
+    require_auth()
+    
+    st.title("Ticket Management")
+    
+    ticket_model = Ticket()
+    user_model = User()
+    file_handler = FileHandler()
+    email_notifier = EmailNotifier()
+    
+    tab1, tab2 = st.tabs(["Ticket List", "Create Ticket"])
+    
+    with tab1:
+        tickets = ticket_model.get_all_tickets()
+        
+        # Filters
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            status_filter = st.selectbox("Status", ["All", "Open", "In Progress", "Closed"])
+        with col2:
+            priority_filter = st.selectbox("Priority", ["All", "Low", "Medium", "High"])
+        with col3:
+            search = st.text_input("Search tickets")
+        
+        filtered_tickets = tickets
+        if status_filter != "All":
+            filtered_tickets = [t for t in filtered_tickets if t['status'].lower() == status_filter.lower()]
+        if priority_filter != "All":
+            filtered_tickets = [t for t in filtered_tickets if t['priority'].lower() == priority_filter.lower()]
+        if search:
+            filtered_tickets = [t for t in filtered_tickets if search.lower() in t['title'].lower()]
+        
+        for ticket in filtered_tickets:
+            with st.expander(f"{ticket['title']} - {ticket['status'].upper()}"):
+                st.write(f"Priority: {ticket['priority']}")
+                st.write(f"Category: {ticket['category']}")
+                st.write(f"Created by: {ticket['creator_email']}")
+                
+                # Update ticket
+                new_status = st.selectbox("Update Status", 
+                    ["Open", "In Progress", "Closed"],
+                    key=f"status_{ticket['id']}"
+                )
+                
+                new_priority = st.selectbox("Update Priority",
+                    ["Low", "Medium", "High"],
+                    key=f"priority_{ticket['id']}"
+                )
+                
+                if st.button("Update", key=f"update_{ticket['id']}"):
+                    ticket_model.update_ticket(
+                        ticket['id'],
+                        status=new_status,
+                        priority=new_priority
+                    )
+                    email_notifier.notify_ticket_updated(ticket, ticket['creator_email'])
+                    st.success("Ticket updated successfully")
+                    st.rerun()
+    
+    with tab2:
+        st.subheader("Create New Ticket")
+        
+        title = st.text_input("Title")
+        description = create_rich_text_editor("new_ticket_description")
+        category = st.selectbox("Category", ["Technical", "Billing", "General"])
+        priority = st.selectbox("Priority", ["Low", "Medium", "High"])
+        
+        uploaded_file = st.file_uploader("Attach File", key="new_ticket_file")
+        
+        if st.button("Create Ticket"):
+            if not title or not description:
+                st.error("Please fill in all required fields")
+            else:
+                new_ticket = ticket_model.create_ticket(
+                    title=title,
+                    description=description,
+                    status="Open",
+                    priority=priority,
+                    category=category,
+                    created_by=st.session_state.user['id']
+                )
+                
+                if uploaded_file:
+                    file_handler.save_file(new_ticket[0]['id'], uploaded_file)
+                
+                # Notify admin
+                admins = [u for u in user_model.get_all_users() if u['role'] == 'admin']
+                if admins:
+                    email_notifier.notify_ticket_created(
+                        {'title': title, 'priority': priority, 'description': description},
+                        admins[0]['email']
+                    )
+                
+                st.success("Ticket created successfully")
+                st.rerun()
