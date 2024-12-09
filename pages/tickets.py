@@ -99,7 +99,7 @@ def render_tickets():
                                 is_private=is_private
                             )
                             st.success("Comment added successfully")
-                            st.experimental_rerun()
+                            st.rerun()
                         except Exception as e:
                             st.error(f"Failed to add comment: {str(e)}")
                     else:
@@ -156,7 +156,7 @@ def render_tickets():
                             st.warning(f"Ticket updated but notification failed: {str(e)}")
                             
                         st.success("Ticket updated successfully")
-                        st.experimental_rerun()
+                        st.rerun()
                     except Exception as e:
                         st.error(f"Failed to update ticket: {str(e)}")
     
