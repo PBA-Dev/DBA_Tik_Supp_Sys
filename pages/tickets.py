@@ -44,6 +44,34 @@ def render_tickets():
                 st.write(f"Category: {ticket['category']}")
                 st.write(f"Created by: {ticket['creator_email']}")
                 
+                # Show comments
+                st.subheader("Comments")
+                comments = ticket_model.get_ticket_comments(ticket['id'])
+                for comment in comments:
+                    with st.container():
+                        st.markdown(f"**{comment['user_email']}** - {comment['created_at'].strftime('%Y-%m-%d %H:%M')}")
+                        st.markdown(comment['content'])
+                        st.markdown("---")
+                
+                # Add new comment
+                st.subheader("Add Comment")
+                new_comment = create_rich_text_editor(f"comment_{ticket['id']}")
+                is_private = st.checkbox("Private Comment", key=f"private_{ticket['id']}")
+                if st.button("Add Comment", key=f"add_comment_{ticket['id']}"):
+                    if new_comment:
+                        ticket_model.add_comment(
+                            ticket_id=ticket['id'],
+                            user_id=st.session_state.user['id'],
+                            content=new_comment,
+                            is_private=is_private
+                        )
+                        st.success("Comment added successfully")
+                        st.rerun()
+                    else:
+                        st.error("Please enter a comment")
+                
+                st.markdown("---")
+                
                 # Update ticket
                 col1, col2, col3 = st.columns(3)
                 with col1:
