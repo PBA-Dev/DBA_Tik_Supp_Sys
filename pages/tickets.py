@@ -134,12 +134,9 @@ def render_tickets():
                     else:
                         assigned_to = ticket['assigned_to']
                 
-                update_key = f"update_{ticket['id']}"
-                if update_key not in st.session_state:
-                    st.session_state[update_key] = False
-                
-                if st.button("Update", key=update_key):
-                    if not st.session_state[update_key]:
+                with st.form(key=f"update_form_{ticket['id']}"):
+                    submitted = st.form_submit_button("Update")
+                    if submitted:
                         try:
                             with st.spinner("Updating ticket..."):
                                 # Update ticket first
@@ -160,13 +157,11 @@ def render_tickets():
                                 except Exception as e:
                                     st.warning(f"Ticket updated but notification failed: {str(e)}")
                                 
-                                st.session_state[update_key] = True
                                 st.success("Ticket updated successfully")
                                 time.sleep(0.1)  # Small delay to ensure state updates
                                 st.rerun()
                         except Exception as e:
                             st.error(f"Failed to update ticket: {str(e)}")
-                            st.session_state[update_key] = False
     
     with tab2:
         st.subheader("Create New Ticket")
