@@ -88,11 +88,18 @@ def render_tickets():
                 
                 # Add new comment
                 st.subheader("Add Comment")
-                comment_key = f"comment_{ticket['id']}"
-                if comment_key not in st.session_state:
-                    st.session_state[comment_key] = ""
                 
-                new_comment = create_rich_text_editor(comment_key, st.session_state[comment_key])
+                # Initialize comment state
+                comment_key = f"comment_{ticket['id']}"
+                submit_key = f"submit_{ticket['id']}"
+                
+                # Reset comment if just submitted
+                if submit_key in st.session_state and st.session_state[submit_key]:
+                    if comment_key in st.session_state:
+                        del st.session_state[comment_key]
+                    st.session_state[submit_key] = False
+                
+                new_comment = create_rich_text_editor(comment_key)
                 is_private = st.checkbox("Private Comment", key=f"private_{ticket['id']}")
                 
                 if st.button("Add Comment", key=f"add_comment_{ticket['id']}"):
@@ -104,11 +111,8 @@ def render_tickets():
                                 content=new_comment,
                                 is_private=is_private
                             )
-                            # Clear the comment after successful submission
-                            st.session_state[comment_key] = ""
+                            st.session_state[submit_key] = True
                             st.success("Comment added successfully")
-                            # Use a more controlled rerun
-                            time.sleep(0.1)  # Small delay to ensure state is updated
                             st.rerun()
                         except Exception as e:
                             st.error(f"Failed to add comment: {str(e)}")
