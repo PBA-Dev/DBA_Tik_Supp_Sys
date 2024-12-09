@@ -28,6 +28,7 @@ footer {visibility: hidden;}
 """, unsafe_allow_html=True)
 
 def main():
+    # Main content area
     if not check_authentication():
         st.title("Support Ticket System")
         
@@ -63,28 +64,29 @@ def main():
                         else:
                             st.error("Registration failed")
     else:
-        # Main title in sidebar (MAIN)
-        st.sidebar.markdown("### MAIN")
-        st.sidebar.markdown("---")
-        
-        # Navigation section
-        st.sidebar.markdown("### Navigation")
-        if 'navigation' not in st.session_state:
-            st.session_state.navigation = "Dashboard"
+        # Configure the sidebar for authenticated users
+        with st.sidebar:
+            st.markdown("### MAIN")
+            st.markdown("---")
             
-        # Only show navigation options in the radio buttons
-        page = st.sidebar.radio("Go to", 
-            ["Dashboard", "Tickets", "Users", "Settings"],
-            key="nav_radio",
-            index=["Dashboard", "Tickets", "Users", "Settings"].index(st.session_state.navigation))
-        
-        st.sidebar.markdown("---")
-        st.sidebar.write(f"Logged in as: {st.session_state.user['email']}")
-        if st.sidebar.button("Logout"):
-            logout_user()
-            st.rerun()
+            # Navigation section
+            st.markdown("### Navigation")
+            if 'navigation' not in st.session_state:
+                st.session_state.navigation = "Dashboard"
+                
+            # Only show navigation options in the radio buttons
+            page = st.radio("Go to", 
+                ["Dashboard", "Tickets", "Users", "Settings"],
+                key="nav_radio",
+                index=["Dashboard", "Tickets", "Users", "Settings"].index(st.session_state.navigation))
             
-        # Page routing
+            st.markdown("---")
+            st.write(f"Logged in as: {st.session_state.user['email']}")
+            if st.button("Logout"):
+                logout_user()
+                st.rerun()
+        
+        # Page routing for authenticated users
         if page == "Dashboard":
             render_dashboard()
         elif page == "Tickets":
