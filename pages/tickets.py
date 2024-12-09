@@ -19,7 +19,12 @@ def render_tickets():
     tab1, tab2 = st.tabs(["Ticket List", "Create Ticket"])
     
     with tab1:
+        # Get tickets based on user role
         tickets = ticket_model.get_all_tickets()
+        if st.session_state.user['role'] == 'customer':
+            # Filter tickets for customers to show only their tickets
+            tickets = [t for t in tickets if t['created_by'] == st.session_state.user['id'] or 
+                      t['assigned_to'] == st.session_state.user['id']]
         
         # Filters
         col1, col2, col3 = st.columns(3)
@@ -49,7 +54,24 @@ def render_tickets():
                 if attachments:
                     st.subheader("Attachments")
                     for attachment in attachments:
-                        st.write(f"📎 {attachment['file_name']} (Uploaded: {attachment['uploaded_at'].strftime('%Y-%m-%d %H:%M')})")
+                        col1, col2 = st.columns([3, 1])
+                        with col1:
+                            if file_handler.is_image_file(attachment['file_name']):
+                                st.image(
+                                    f"data:image/png;base64,{attachment['file_data_base64']}", 
+                                    caption=attachment['file_name'],
+                                    use_column_width=True
+                                )
+                            st.write(f"📎 {attachment['file_name']} (Uploaded: {attachment['uploaded_at'].strftime('%Y-%m-%d %H:%M')})")
+                    
+                    # Add file upload for existing tickets
+                    new_file = st.file_uploader("Add Attachment", key=f"attachment_{ticket['id']}")
+                    if new_file:
+                        if file_handler.save_file(ticket['id'], new_file):
+                            st.success("File uploaded successfully")
+                            st.rerun()
+                        else:
+                            st.error("Invalid file. Please ensure the file is under 5MB and has a valid extension (.txt, .pdf, .doc, .docx, .png, .jpg, .jpeg)")
                         
                 # Show comments
                 st.subheader("Comments")

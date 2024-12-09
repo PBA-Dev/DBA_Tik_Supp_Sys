@@ -6,7 +6,8 @@ class FileHandler:
     def __init__(self):
         self.db = Database()
         self.allowed_extensions = {'.txt', '.pdf', '.doc', '.docx', '.png', '.jpg', '.jpeg'}
-        self.max_file_size = 5 * 1024 * 1024  # 5MB
+        self.max_file_size = 5 * 1024 * 1024  # 5MB limit
+        self.image_extensions = {'.png', '.jpg', '.jpeg', '.gif'}
 
     def is_valid_file(self, file):
         if file is None:
@@ -35,8 +36,12 @@ class FileHandler:
 
     def get_ticket_attachments(self, ticket_id):
         query = """
-            SELECT id, file_name, uploaded_at
+            SELECT id, file_name, uploaded_at, 
+                   encode(file_data, 'base64') as file_data_base64
             FROM attachments
             WHERE ticket_id = %s
         """
         return self.db.execute(query, (ticket_id,))
+
+    def is_image_file(self, filename):
+        return os.path.splitext(filename)[1].lower() in self.image_extensions
