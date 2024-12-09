@@ -60,7 +60,7 @@ def render_tickets():
                                 st.image(
                                     f"data:image/png;base64,{attachment['file_data_base64']}", 
                                     caption=attachment['file_name'],
-                                    use_column_width=True
+                                    use_container_width=True
                                 )
                             st.write(f"📎 {attachment['file_name']} (Uploaded: {attachment['uploaded_at'].strftime('%Y-%m-%d %H:%M')})")
                     
