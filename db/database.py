@@ -126,25 +126,45 @@ class Database:
     def execute(self, query, params=None):
         """Execute a query with retry logic"""
         retry_count = 0
+        last_error = None
         while retry_count < self._max_retries:
             conn = None
             try:
                 conn = self._get_connection()
+                if conn is None or conn.closed:
+                    raise Exception("Failed to get valid database connection")
+                    
                 with conn.cursor(cursor_factory=RealDictCursor) as cur:
                     cur.execute(query, params)
                     conn.commit()
                     try:
-                        return cur.fetchall()
+                        result = cur.fetchall()
+                        return result
                     except psycopg2.ProgrammingError:
                         return None
-            except (psycopg2.Error, Exception) as e:
+            except (psycopg2.OperationalError, psycopg2.InterfaceError) as e:
+                last_error = e
                 retry_count += 1
-                if retry_count == self._max_retries:
-                    raise Exception(f"Query execution failed after {self._max_retries} attempts: {str(e)}")
-                time.sleep(self._retry_delay)
+                if retry_count < self._max_retries:
+                    print(f"Database connection error (attempt {retry_count}): {str(e)}")
+                    time.sleep(self._retry_delay * retry_count)  # Exponential backoff
+                    self._initialize_pool()  # Reinitialize the pool on connection errors
+            except Exception as e:
+                last_error = e
+                retry_count += 1
+                if retry_count < self._max_retries:
+                    print(f"Query execution error (attempt {retry_count}): {str(e)}")
+                    time.sleep(self._retry_delay)
             finally:
                 if conn:
-                    self._return_connection(conn)
+                    try:
+                        self._return_connection(conn)
+                    except Exception as e:
+                        print(f"Error returning connection to pool: {str(e)}")
+        
+        if last_error:
+            raise Exception(f"Query execution failed after {self._max_retries} attempts. Last error: {str(last_error)}")
+        raise Exception("Query execution failed with unknown error")
 
     def __del__(self):
         """Cleanup: close all connections in the pool"""
