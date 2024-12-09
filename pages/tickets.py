@@ -134,30 +134,39 @@ def render_tickets():
                     else:
                         assigned_to = ticket['assigned_to']
                 
-                if st.button("Update", key=f"update_{ticket['id']}"):
-                    try:
-                        # Update ticket first
-                        ticket_model.update_ticket(
-                            ticket['id'],
-                            status=new_status,
-                            priority=new_priority,
-                            assigned_to=assigned_to
-                        )
-                        
-                        # Handle notifications in try-except blocks to prevent blocking
+                update_key = f"update_{ticket['id']}"
+                if update_key not in st.session_state:
+                    st.session_state[update_key] = False
+                
+                if st.button("Update", key=update_key):
+                    if not st.session_state[update_key]:
                         try:
-                            email_notifier.notify_ticket_updated(ticket, ticket['creator_email'])
-                            if assigned_to and assigned_to != ticket['assigned_to']:
-                                assigned_user = user_model.get_user_by_id(assigned_to)
-                                if assigned_user:
-                                    email_notifier.notify_ticket_assigned(ticket, assigned_user['email'])
+                            with st.spinner("Updating ticket..."):
+                                # Update ticket first
+                                ticket_model.update_ticket(
+                                    ticket['id'],
+                                    status=new_status,
+                                    priority=new_priority,
+                                    assigned_to=assigned_to
+                                )
+                                
+                                # Handle notifications in try-except blocks to prevent blocking
+                                try:
+                                    email_notifier.notify_ticket_updated(ticket, ticket['creator_email'])
+                                    if assigned_to and assigned_to != ticket['assigned_to']:
+                                        assigned_user = user_model.get_user_by_id(assigned_to)
+                                        if assigned_user:
+                                            email_notifier.notify_ticket_assigned(ticket, assigned_user['email'])
+                                except Exception as e:
+                                    st.warning(f"Ticket updated but notification failed: {str(e)}")
+                                
+                                st.session_state[update_key] = True
+                                st.success("Ticket updated successfully")
+                                time.sleep(0.1)  # Small delay to ensure state updates
+                                st.rerun()
                         except Exception as e:
-                            st.warning(f"Ticket updated but notification failed: {str(e)}")
-                            
-                        st.success("Ticket updated successfully")
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Failed to update ticket: {str(e)}")
+                            st.error(f"Failed to update ticket: {str(e)}")
+                            st.session_state[update_key] = False
     
     with tab2:
         st.subheader("Create New Ticket")

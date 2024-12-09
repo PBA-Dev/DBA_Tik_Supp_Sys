@@ -31,47 +31,46 @@ class CommentHandler:
         processing_key = f"processing_{ticket_id}"
         
         # Initialize form state if not exists
-        if comment_key not in st.session_state:
-            st.session_state[comment_key] = ""
         if processing_key not in st.session_state:
             st.session_state[processing_key] = False
             
         # Create a form for the comment
-        with st.form(key=form_id, clear_on_submit=True):
+        with st.form(key=form_id):
             comment_content = st.text_area(
                 "Comment",
+                value=st.session_state.get(comment_key, ""),
                 key=comment_key
             )
             is_private = st.checkbox("Private Comment", key=f"private_{ticket_id}")
-            submit_button = st.form_submit_button("Add Comment")
+            submitted = st.form_submit_button("Add Comment")
             
-            if submit_button:
+            if submitted:
                 if not comment_content.strip():
                     st.error("Please enter a comment")
-                    return
-                
-                if st.session_state.get(processing_key, False):
+                elif st.session_state.get(processing_key, False):
                     st.warning("Comment is being processed...")
-                    return
-                
-                try:
-                    # Set processing flag
-                    st.session_state[processing_key] = True
-                    
-                    # Add the comment
-                    self.ticket_model.add_comment(
-                        ticket_id=ticket_id,
-                        user_id=user_id,
-                        content=comment_content,
-                        is_private=is_private
-                    )
-                    
-                    # Show success and rerun
-                    st.success("Comment added successfully")
-                    time.sleep(0.1)  # Small delay for state update
-                    st.rerun()
-                    
-                except Exception as e:
-                    st.error(f"Failed to add comment: {str(e)}")
-                finally:
-                    st.session_state[processing_key] = False
+                else:
+                    try:
+                        # Set processing flag
+                        st.session_state[processing_key] = True
+                        
+                        # Add the comment
+                        self.ticket_model.add_comment(
+                            ticket_id=ticket_id,
+                            user_id=user_id,
+                            content=comment_content,
+                            is_private=is_private
+                        )
+                        
+                        # Clear the form and show success
+                        st.session_state[comment_key] = ""
+                        st.success("Comment added successfully")
+                        
+                        # Reset processing state
+                        st.session_state[processing_key] = False
+                        time.sleep(0.1)  # Small delay for state update
+                        st.rerun()
+                        
+                    except Exception as e:
+                        st.error(f"Failed to add comment: {str(e)}")
+                        st.session_state[processing_key] = False
