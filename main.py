@@ -63,15 +63,20 @@ def main():
                         else:
                             st.error("Registration failed")
     else:
-        # Main title in sidebar
-        st.sidebar.title("MAIN")
+        # Main title in sidebar (MAIN)
+        st.sidebar.markdown("### MAIN")
         st.sidebar.markdown("---")
         
         # Navigation section
-        st.sidebar.title("Navigation")
+        st.sidebar.markdown("### Navigation")
         if 'navigation' not in st.session_state:
             st.session_state.navigation = "Dashboard"
-        page = st.sidebar.radio("Go to", ["Dashboard", "Tickets", "Users", "Settings"], key="nav_radio", index=["Dashboard", "Tickets", "Users", "Settings"].index(st.session_state.navigation))
+            
+        # Only show navigation options in the radio buttons
+        page = st.sidebar.radio("Go to", 
+            ["Dashboard", "Tickets", "Users", "Settings"],
+            key="nav_radio",
+            index=["Dashboard", "Tickets", "Users", "Settings"].index(st.session_state.navigation))
         
         st.sidebar.markdown("---")
         st.sidebar.write(f"Logged in as: {st.session_state.user['email']}")
