@@ -1,4 +1,5 @@
 import streamlit as st
+import time
 from utils.auth import require_auth
 from models.ticket import Ticket
 from models.user import User
@@ -87,8 +88,13 @@ def render_tickets():
                 
                 # Add new comment
                 st.subheader("Add Comment")
-                new_comment = create_rich_text_editor(f"comment_{ticket['id']}")
+                comment_key = f"comment_{ticket['id']}"
+                if comment_key not in st.session_state:
+                    st.session_state[comment_key] = ""
+                
+                new_comment = create_rich_text_editor(comment_key, st.session_state[comment_key])
                 is_private = st.checkbox("Private Comment", key=f"private_{ticket['id']}")
+                
                 if st.button("Add Comment", key=f"add_comment_{ticket['id']}"):
                     if new_comment:
                         try:
@@ -98,7 +104,11 @@ def render_tickets():
                                 content=new_comment,
                                 is_private=is_private
                             )
+                            # Clear the comment after successful submission
+                            st.session_state[comment_key] = ""
                             st.success("Comment added successfully")
+                            # Use a more controlled rerun
+                            time.sleep(0.1)  # Small delay to ensure state is updated
                             st.rerun()
                         except Exception as e:
                             st.error(f"Failed to add comment: {str(e)}")

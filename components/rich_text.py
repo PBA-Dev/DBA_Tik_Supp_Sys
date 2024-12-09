@@ -2,11 +2,11 @@ import streamlit as st
 from streamlit_quill import st_quill
 
 def create_rich_text_editor(key, default_value=""):
-    return st_quill(
+    # Return empty string if the editor is cleared
+    content = st_quill(
         value=default_value,
         key=key,
         html=True,
-        
         toolbar=[
             ['bold', 'italic', 'underline', 'strike'],
             ['blockquote', 'code-block'],
@@ -15,3 +15,4 @@ def create_rich_text_editor(key, default_value=""):
             ['clean']
         ]
     )
+    return content if content else ""
