@@ -9,7 +9,12 @@ from pages.settings import render_settings
 st.set_page_config(
     page_title="Support Ticket System",
     page_icon="🎫",
-    layout="wide"
+    layout="wide",
+    menu_items={
+        'Get Help': None,
+        'Report a bug': None,
+        'About': None
+    }
 )
 
 def main():
@@ -48,7 +53,11 @@ def main():
                         else:
                             st.error("Registration failed")
     else:
-        # Sidebar navigation
+        # Main title in sidebar
+        st.sidebar.title("MAIN")
+        st.sidebar.markdown("---")
+        
+        # Navigation section
         st.sidebar.title("Navigation")
         if 'navigation' not in st.session_state:
             st.session_state.navigation = "Dashboard"
