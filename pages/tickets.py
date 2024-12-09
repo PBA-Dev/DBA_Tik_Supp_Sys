@@ -87,68 +87,22 @@ def render_tickets():
                     if not new_file:
                         st.session_state[upload_key] = False
                         
-                # Show comments
-                st.subheader("Comments")
-                comments = ticket_model.get_ticket_comments(ticket['id'])
-                # Filter private comments for non-admin/agent users
-                visible_comments = [c for c in comments if not c['is_private'] or 
-                                 st.session_state.user['role'] in ['admin', 'agent']]
-                for comment in visible_comments:
-                    with st.container():
-                        privacy_badge = " 🔒 Private" if comment['is_private'] else ""
-                        st.markdown(f"**{comment['user_email']}**{privacy_badge} - {comment['created_at'].strftime('%Y-%m-%d %H:%M')}")
-                        st.markdown(comment['content'])
-                        st.markdown("---")
+                # Handle comments using the CommentHandler
+                from components.comment_handler import CommentHandler
+                comment_handler = CommentHandler()
                 
-                # Add new comment
-                st.subheader("Add Comment")
+                # Show existing comments
+                comment_handler.render_comments(
+                    ticket_id=ticket['id'],
+                    user_id=st.session_state.user['id'],
+                    user_role=st.session_state.user['role']
+                )
                 
-                # Initialize state keys
-                comment_key = f"comment_{ticket['id']}"
-                submit_key = f"submit_{ticket['id']}"
-                processing_key = f"processing_{ticket['id']}"
-                
-                # Initialize processing state if not exists
-                if processing_key not in st.session_state:
-                    st.session_state[processing_key] = False
-                
-                # Show success message and clear form if comment was just submitted
-                if submit_key in st.session_state and st.session_state[submit_key]:
-                    st.success("Comment added successfully")
-                    st.session_state[submit_key] = False
-                    st.session_state[processing_key] = False
-                    if comment_key in st.session_state:
-                        del st.session_state[comment_key]
-                
-                new_comment = create_rich_text_editor(comment_key)
-                is_private = st.checkbox("Private Comment", key=f"private_{ticket['id']}")
-                
-                if st.button("Add Comment", key=f"add_comment_{ticket['id']}"):
-                    if not new_comment:
-                        st.error("Please enter a comment")
-                    elif st.session_state[processing_key]:
-                        st.warning("Comment is being processed...")
-                    else:
-                        try:
-                            # Set processing flag to prevent multiple submissions
-                            st.session_state[processing_key] = True
-                            
-                            ticket_model.add_comment(
-                                ticket_id=ticket['id'],
-                                user_id=st.session_state.user['id'],
-                                content=new_comment,
-                                is_private=is_private
-                            )
-                            
-                            # Mark as submitted and trigger rerun
-                            st.session_state[submit_key] = True
-                            # Clear the comment after successful submission
-                            st.session_state[comment_key] = ""
-                            time.sleep(0.1)  # Small delay to ensure state is updated
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"Failed to add comment: {str(e)}")
-                            st.session_state[processing_key] = False
+                # Render comment form
+                comment_handler.render_comment_form(
+                    ticket_id=ticket['id'],
+                    user_id=st.session_state.user['id']
+                )
                 
                 st.markdown("---")
                 
