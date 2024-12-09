@@ -10,12 +10,22 @@ st.set_page_config(
     page_title="Support Ticket System",
     page_icon="🎫",
     layout="wide",
+    initial_sidebar_state="expanded",
     menu_items={
         'Get Help': None,
         'Report a bug': None,
         'About': None
     }
 )
+
+# Hide all Streamlit elements except the sidebar toggle
+st.markdown("""
+<style>
+#MainMenu {visibility: hidden;}
+header {visibility: hidden;}
+footer {visibility: hidden;}
+</style>
+""", unsafe_allow_html=True)
 
 def main():
     if not check_authentication():
