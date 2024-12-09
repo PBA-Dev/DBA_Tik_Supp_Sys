@@ -73,19 +73,14 @@ def render_tickets():
                         
                     new_file = st.file_uploader("Add Attachment", key=file_key)
                     
-                    if new_file and not st.session_state[upload_key]:
+                    if new_file:
                         if file_handler.save_file(ticket['id'], new_file):
-                            st.session_state[upload_key] = True
                             st.success("File uploaded successfully")
-                            # Clear the file uploader
-                            st.session_state[file_key] = None
+                            st.session_state['navigation'] = "Dashboard"
+                            time.sleep(0.1)  # Small delay to ensure state updates
                             st.rerun()
                         else:
                             st.error("Invalid file. Please ensure the file is under 5MB and has a valid extension (.txt, .pdf, .doc, .docx, .png, .jpg, .jpeg)")
-                    
-                    # Reset upload state when no file is selected
-                    if not new_file:
-                        st.session_state[upload_key] = False
                         
                 # Handle comments using the CommentHandler
                 from components.comment_handler import CommentHandler
