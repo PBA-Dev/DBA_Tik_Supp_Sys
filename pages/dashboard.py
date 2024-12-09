@@ -14,20 +14,23 @@ def render_dashboard():
     )
     
     # Statistics
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5 = st.columns(5)
     
     total_tickets = len(tickets)
-    open_tickets = len([t for t in tickets if t['status'] == 'open'])
-    high_priority = len([t for t in tickets if t['priority'] == 'high'])
+    open_tickets = len([t for t in tickets if t['status'].lower() == 'open'])
+    closed_tickets = len([t for t in tickets if t['status'].lower() == 'closed'])
+    high_priority = len([t for t in tickets if t['priority'].lower() == 'high'])
     
     with col1:
         st.metric("Total Tickets", total_tickets)
     with col2:
         st.metric("Open Tickets", open_tickets)
     with col3:
-        st.metric("High Priority", high_priority)
+        st.metric("Closed Tickets", closed_tickets)
     with col4:
-        response_rate = f"{((total_tickets - open_tickets) / total_tickets * 100) if total_tickets > 0 else 0:.1f}%"
+        st.metric("High Priority", high_priority)
+    with col5:
+        response_rate = f"{(closed_tickets / total_tickets * 100) if total_tickets > 0 else 0:.1f}%"
         st.metric("Response Rate", response_rate)
     
     # Recent Tickets
