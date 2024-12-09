@@ -158,6 +158,8 @@ def render_tickets():
                                     st.warning(f"Ticket updated but notification failed: {str(e)}")
                                 
                                 st.success("Ticket updated successfully")
+                                # Redirect to dashboard
+                                st.session_state['navigation'] = "Dashboard"
                                 time.sleep(0.1)  # Small delay to ensure state updates
                                 st.rerun()
                         except Exception as e:

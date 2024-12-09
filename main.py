@@ -50,7 +50,9 @@ def main():
     else:
         # Sidebar navigation
         st.sidebar.title("Navigation")
-        page = st.sidebar.radio("Go to", ["Dashboard", "Tickets", "Users", "Settings"])
+        if 'navigation' not in st.session_state:
+            st.session_state.navigation = "Dashboard"
+        page = st.sidebar.radio("Go to", ["Dashboard", "Tickets", "Users", "Settings"], key="nav_radio", index=["Dashboard", "Tickets", "Users", "Settings"].index(st.session_state.navigation))
         
         st.sidebar.markdown("---")
         st.sidebar.write(f"Logged in as: {st.session_state.user['email']}")

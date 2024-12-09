@@ -41,6 +41,8 @@ class CommentHandler:
                             is_private=is_private
                         )
                         st.success("Comment added successfully")
+                        # Redirect to dashboard
+                        st.session_state['navigation'] = "Dashboard"
                         time.sleep(0.1)  # Small delay for state update
                         st.rerun()
                     except Exception as e:
