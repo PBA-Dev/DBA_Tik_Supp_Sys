@@ -65,13 +65,27 @@ def render_tickets():
                             st.write(f"📎 {attachment['file_name']} (Uploaded: {attachment['uploaded_at'].strftime('%Y-%m-%d %H:%M')})")
                     
                     # Add file upload for existing tickets
-                    new_file = st.file_uploader("Add Attachment", key=f"attachment_{ticket['id']}")
-                    if new_file:
+                    upload_key = f"upload_{ticket['id']}"
+                    file_key = f"attachment_{ticket['id']}"
+                    
+                    if upload_key not in st.session_state:
+                        st.session_state[upload_key] = False
+                        
+                    new_file = st.file_uploader("Add Attachment", key=file_key)
+                    
+                    if new_file and not st.session_state[upload_key]:
                         if file_handler.save_file(ticket['id'], new_file):
+                            st.session_state[upload_key] = True
                             st.success("File uploaded successfully")
+                            # Clear the file uploader
+                            st.session_state[file_key] = None
                             st.rerun()
                         else:
                             st.error("Invalid file. Please ensure the file is under 5MB and has a valid extension (.txt, .pdf, .doc, .docx, .png, .jpg, .jpeg)")
+                    
+                    # Reset upload state when no file is selected
+                    if not new_file:
+                        st.session_state[upload_key] = False
                         
                 # Show comments
                 st.subheader("Comments")
@@ -89,35 +103,48 @@ def render_tickets():
                 # Add new comment
                 st.subheader("Add Comment")
                 
-                # Initialize comment state
+                # Initialize state keys
                 comment_key = f"comment_{ticket['id']}"
                 submit_key = f"submit_{ticket['id']}"
+                processing_key = f"processing_{ticket['id']}"
                 
-                # Reset comment if just submitted
+                # Initialize processing state if not exists
+                if processing_key not in st.session_state:
+                    st.session_state[processing_key] = False
+                
+                # Show success message and clear form if comment was just submitted
                 if submit_key in st.session_state and st.session_state[submit_key]:
+                    st.success("Comment added successfully")
+                    st.session_state[submit_key] = False
+                    st.session_state[processing_key] = False
                     if comment_key in st.session_state:
                         del st.session_state[comment_key]
-                    st.session_state[submit_key] = False
                 
                 new_comment = create_rich_text_editor(comment_key)
                 is_private = st.checkbox("Private Comment", key=f"private_{ticket['id']}")
                 
-                if st.button("Add Comment", key=f"add_comment_{ticket['id']}"):
+                if st.button("Add Comment", key=f"add_comment_{ticket['id']}") and not st.session_state[processing_key]:
                     if new_comment:
                         try:
+                            # Set processing flag to prevent multiple submissions
+                            st.session_state[processing_key] = True
+                            
                             ticket_model.add_comment(
                                 ticket_id=ticket['id'],
                                 user_id=st.session_state.user['id'],
                                 content=new_comment,
                                 is_private=is_private
                             )
+                            
+                            # Mark as submitted and trigger rerun
                             st.session_state[submit_key] = True
-                            st.success("Comment added successfully")
                             st.rerun()
                         except Exception as e:
                             st.error(f"Failed to add comment: {str(e)}")
+                            st.session_state[processing_key] = False
                     else:
                         st.error("Please enter a comment")
+                        st.session_state[processing_key] = False
                 
                 st.markdown("---")
                 
