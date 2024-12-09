@@ -123,8 +123,12 @@ def render_tickets():
                 new_comment = create_rich_text_editor(comment_key)
                 is_private = st.checkbox("Private Comment", key=f"private_{ticket['id']}")
                 
-                if st.button("Add Comment", key=f"add_comment_{ticket['id']}") and not st.session_state[processing_key]:
-                    if new_comment:
+                if st.button("Add Comment", key=f"add_comment_{ticket['id']}"):
+                    if not new_comment:
+                        st.error("Please enter a comment")
+                    elif st.session_state[processing_key]:
+                        st.warning("Comment is being processed...")
+                    else:
                         try:
                             # Set processing flag to prevent multiple submissions
                             st.session_state[processing_key] = True
@@ -138,13 +142,13 @@ def render_tickets():
                             
                             # Mark as submitted and trigger rerun
                             st.session_state[submit_key] = True
+                            # Clear the comment after successful submission
+                            st.session_state[comment_key] = ""
+                            time.sleep(0.1)  # Small delay to ensure state is updated
                             st.rerun()
                         except Exception as e:
                             st.error(f"Failed to add comment: {str(e)}")
                             st.session_state[processing_key] = False
-                    else:
-                        st.error("Please enter a comment")
-                        st.session_state[processing_key] = False
                 
                 st.markdown("---")
                 
@@ -204,8 +208,14 @@ def render_tickets():
     with tab2:
         st.subheader("Create New Ticket")
         
-        title = st.text_input("Title")
-        description = create_rich_text_editor("new_ticket_description")
+        # Initialize form fields in session state if not exists
+        if 'title' not in st.session_state:
+            st.session_state.title = ""
+        if 'description' not in st.session_state:
+            st.session_state.description = ""
+            
+        title = st.text_input("Title", key="title")
+        description = create_rich_text_editor("new_ticket_description", st.session_state.get('description', ''))
         category = st.selectbox("Category", ["Technical", "Billing", "General"])
         priority = st.selectbox("Priority", ["Low", "Medium", "High"])
         
@@ -224,30 +234,51 @@ def render_tickets():
         
         uploaded_file = st.file_uploader("Attach File", key="new_ticket_file")
         
-        if st.button("Create Ticket"):
+        # Initialize ticket creation state
+        if 'creating_ticket' not in st.session_state:
+            st.session_state.creating_ticket = False
+            
+        if st.button("Create Ticket") and not st.session_state.creating_ticket:
             if not title or not description:
                 st.error("Please fill in all required fields")
             else:
-                new_ticket = ticket_model.create_ticket(
-                    title=title,
-                    description=description,
-                    status="Open",
-                    priority=priority,
-                    category=category,
-                    created_by=st.session_state.user['id'],
-                    assigned_to=assigned_to
-                )
-                
-                if uploaded_file:
-                    file_handler.save_file(new_ticket[0]['id'], uploaded_file)
-                
-                # Notify admin
-                admins = [u for u in user_model.get_all_users() if u['role'] == 'admin']
-                if admins:
-                    email_notifier.notify_ticket_created(
-                        {'title': title, 'priority': priority, 'description': description},
-                        admins[0]['email']
+                try:
+                    # Set creating flag to prevent multiple submissions
+                    st.session_state.creating_ticket = True
+                    
+                    new_ticket = ticket_model.create_ticket(
+                        title=title,
+                        description=description,
+                        status="Open",
+                        priority=priority,
+                        category=category,
+                        created_by=st.session_state.user['id'],
+                        assigned_to=assigned_to
                     )
-                
-                st.success("Ticket created successfully")
-                st.rerun()
+                    
+                    if uploaded_file:
+                        file_handler.save_file(new_ticket[0]['id'], uploaded_file)
+                    
+                    # Notify admin
+                    admins = [u for u in user_model.get_all_users() if u['role'] == 'admin']
+                    if admins:
+                        try:
+                            email_notifier.notify_ticket_created(
+                                {'title': title, 'priority': priority, 'description': description},
+                                admins[0]['email']
+                            )
+                        except Exception as e:
+                            st.warning(f"Ticket created but notification failed: {str(e)}")
+                    
+                    # Clear the form
+                    st.session_state.title = ""
+                    st.session_state.description = ""
+                    st.session_state.uploaded_file = None
+                    
+                    st.success("Ticket created successfully")
+                    time.sleep(0.1)  # Small delay to ensure state is updated
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Failed to create ticket: {str(e)}")
+                finally:
+                    st.session_state.creating_ticket = False
