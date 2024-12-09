@@ -24,7 +24,8 @@ def render_dashboard():
     with col3:
         st.metric("High Priority", high_priority)
     with col4:
-        st.metric("Response Rate", f"{(total_tickets - open_tickets) / total_tickets * 100:.1f}%")
+        response_rate = f"{((total_tickets - open_tickets) / total_tickets * 100) if total_tickets > 0 else 0:.1f}%"
+        st.metric("Response Rate", response_rate)
     
     # Recent Tickets
     st.subheader("Recent Tickets")

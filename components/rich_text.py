@@ -6,7 +6,7 @@ def create_rich_text_editor(key, default_value=""):
         value=default_value,
         key=key,
         html=True,
-        height=200,
+        
         toolbar=[
             ['bold', 'italic', 'underline', 'strike'],
             ['blockquote', 'code-block'],
