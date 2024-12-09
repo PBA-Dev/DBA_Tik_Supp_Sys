@@ -20,11 +20,10 @@ def render_tickets():
     
     with tab1:
         # Get tickets based on user role
-        tickets = ticket_model.get_all_tickets()
-        if st.session_state.user['role'] == 'customer':
-            # Filter tickets for customers to show only their tickets
-            tickets = [t for t in tickets if t['created_by'] == st.session_state.user['id'] or 
-                      t['assigned_to'] == st.session_state.user['id']]
+        tickets = ticket_model.get_all_tickets(
+            user_id=st.session_state.user['id'],
+            user_role=st.session_state.user['role']
+        )
         
         # Filters
         col1, col2, col3 = st.columns(3)

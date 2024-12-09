@@ -11,14 +11,19 @@ class Ticket:
         """
         return self.db.execute(query, (title, description, status, priority, category, created_by, assigned_to))
 
-    def get_all_tickets(self):
-        query = """
+    def get_all_tickets(self, user_id=None, user_role=None):
+        base_query = """
             SELECT t.*, u1.email as creator_email, u2.email as assignee_email
             FROM tickets t
             LEFT JOIN users u1 ON t.created_by = u1.id
             LEFT JOIN users u2 ON t.assigned_to = u2.id
         """
-        return self.db.execute(query)
+        
+        if user_role == 'customer':
+            base_query += " WHERE t.created_by = %s OR t.assigned_to = %s"
+            return self.db.execute(base_query, (user_id, user_id))
+        
+        return self.db.execute(base_query)
 
     def get_ticket_by_id(self, ticket_id):
         query = """

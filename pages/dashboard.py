@@ -8,7 +8,10 @@ def render_dashboard():
     st.title("Support Dashboard")
     
     ticket_model = Ticket()
-    tickets = ticket_model.get_all_tickets()
+    tickets = ticket_model.get_all_tickets(
+        user_id=st.session_state.user['id'],
+        user_role=st.session_state.user['role']
+    )
     
     # Statistics
     col1, col2, col3, col4 = st.columns(4)
