@@ -32,9 +32,17 @@ div[data-testid="stStatusWidget"] {visibility: hidden;}
 .main {visibility: hidden;}
 section[data-testid="stSidebar"] {
     width: 250px;
-    background-color: #f0f2f6;
+    background-color: #262730;
+}
+section[data-testid="stSidebar"] .st-emotion-cache-16idsys p,
+section[data-testid="stSidebar"] .st-emotion-cache-16idsys span,
+section[data-testid="stSidebar"] .st-emotion-cache-16idsys label {
+    color: #ffffff !important;
 }
 div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"] {display: none;}
+section[data-testid="stSidebar"] .st-emotion-cache-pkbazv {
+    color: #ffffff !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
