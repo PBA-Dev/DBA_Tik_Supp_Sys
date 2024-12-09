@@ -25,28 +25,51 @@ class CommentHandler:
     def render_comment_form(self, ticket_id, user_id):
         st.subheader("Add Comment")
         
-        form_id = f"comment_form_{ticket_id}"
+        # Create unique keys for this form
+        form_key = f"comment_form_{ticket_id}"
+        text_key = f"comment_text_{ticket_id}"
+        private_key = f"private_{ticket_id}"
         
-        with st.form(key=form_id):
-            comment_content = st.text_area("Comment")
-            is_private = st.checkbox("Private Comment")
-            submitted = st.form_submit_button("Add Comment")
+        # Initialize the comment text in session state if it doesn't exist
+        if text_key not in st.session_state:
+            st.session_state[text_key] = ""
+        
+        with st.form(key=form_key):
+            # Text area for comment
+            comment_text = st.text_area(
+                "Comment",
+                key=text_key,
+                height=100
+            )
             
-            if submitted:
-                if not comment_content or not comment_content.strip():
+            # Checkbox for private comment
+            is_private = st.checkbox("Private Comment", key=private_key)
+            
+            # Submit button
+            submit_clicked = st.form_submit_button("Add Comment")
+            
+            if submit_clicked:
+                # Check if comment is not empty or just whitespace
+                if not comment_text or comment_text.strip() == "":
                     st.error("Please enter a comment")
                 else:
                     try:
-                        # Add the comment
+                        # Add the comment to the database
                         self.ticket_model.add_comment(
                             ticket_id=ticket_id,
                             user_id=user_id,
-                            content=comment_content.strip(),
+                            content=comment_text.strip(),
                             is_private=is_private
                         )
                         
+                        # Clear the form
+                        st.session_state[text_key] = ""
+                        
+                        # Show success message
                         st.success("Comment added successfully")
-                        time.sleep(0.1)  # Small delay for state update
+                        
+                        # Rerun the app to refresh the comments
+                        time.sleep(0.1)
                         st.rerun()
                         
                     except Exception as e:
