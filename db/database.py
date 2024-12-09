@@ -9,11 +9,8 @@ class Database:
         if cls._instance is None:
             cls._instance = super(Database, cls).__new__(cls)
             cls._instance.conn = psycopg2.connect(
-                host=os.environ['PGHOST'],
-                database=os.environ['PGDATABASE'],
-                user=os.environ['PGUSER'],
-                password=os.environ['PGPASSWORD'],
-                port=os.environ['PGPORT']
+                os.environ['DATABASE_URL'],
+                sslmode='require'
             )
             cls._instance.create_tables()
         return cls._instance

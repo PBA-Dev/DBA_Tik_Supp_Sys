@@ -44,12 +44,23 @@ def render_tickets():
                 st.write(f"Category: {ticket['category']}")
                 st.write(f"Created by: {ticket['creator_email']}")
                 
+                # Show attachments
+                attachments = file_handler.get_ticket_attachments(ticket['id'])
+                if attachments:
+                    st.subheader("Attachments")
+                    for attachment in attachments:
+                        st.write(f"📎 {attachment['file_name']} (Uploaded: {attachment['uploaded_at'].strftime('%Y-%m-%d %H:%M')})")
+                        
                 # Show comments
                 st.subheader("Comments")
                 comments = ticket_model.get_ticket_comments(ticket['id'])
-                for comment in comments:
+                # Filter private comments for non-admin/agent users
+                visible_comments = [c for c in comments if not c['is_private'] or 
+                                 st.session_state.user['role'] in ['admin', 'agent']]
+                for comment in visible_comments:
                     with st.container():
-                        st.markdown(f"**{comment['user_email']}** - {comment['created_at'].strftime('%Y-%m-%d %H:%M')}")
+                        privacy_badge = " 🔒 Private" if comment['is_private'] else ""
+                        st.markdown(f"**{comment['user_email']}**{privacy_badge} - {comment['created_at'].strftime('%Y-%m-%d %H:%M')}")
                         st.markdown(comment['content'])
                         st.markdown("---")
                 
@@ -128,6 +139,19 @@ def render_tickets():
         category = st.selectbox("Category", ["Technical", "Billing", "General"])
         priority = st.selectbox("Priority", ["Low", "Medium", "High"])
         
+        # Allow admin/agents to assign tickets to users during creation
+        assigned_to = None
+        if st.session_state.user['role'] in ['admin', 'agent']:
+            user_model = User()
+            all_users = user_model.get_all_users()
+            user_options = [(None, "Unassigned")] + [(str(u['id']), f"{u['email']} ({u['role']})") for u in all_users]
+            selected_user = st.selectbox(
+                "Assign To",
+                options=[id for id, _ in user_options],
+                format_func=lambda x: dict(user_options)[x]
+            )
+            assigned_to = int(selected_user) if selected_user else None
+        
         uploaded_file = st.file_uploader("Attach File", key="new_ticket_file")
         
         if st.button("Create Ticket"):
@@ -140,7 +164,8 @@ def render_tickets():
                     status="Open",
                     priority=priority,
                     category=category,
-                    created_by=st.session_state.user['id']
+                    created_by=st.session_state.user['id'],
+                    assigned_to=assigned_to
                 )
                 
                 if uploaded_file:
