@@ -45,3 +45,15 @@ class EmailNotifier:
         <p><strong>Priority:</strong> {ticket['priority']}</p>
         """
         self.send_notification(user_email, subject, body)
+
+    def notify_ticket_assigned(self, ticket, assignee_email):
+        subject = f"Ticket Assigned: {ticket['title']}"
+        body = f"""
+        <h2>Ticket Assignment</h2>
+        <p>You have been assigned to the following ticket:</p>
+        <p><strong>Title:</strong> {ticket['title']}</p>
+        <p><strong>Priority:</strong> {ticket['priority']}</p>
+        <p><strong>Status:</strong> {ticket['status']}</p>
+        <p><strong>Description:</strong> {ticket['description']}</p>
+        """
+        self.send_notification(assignee_email, subject, body)

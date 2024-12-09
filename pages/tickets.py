@@ -45,23 +45,50 @@ def render_tickets():
                 st.write(f"Created by: {ticket['creator_email']}")
                 
                 # Update ticket
-                new_status = st.selectbox("Update Status", 
-                    ["Open", "In Progress", "Closed"],
-                    key=f"status_{ticket['id']}"
-                )
-                
-                new_priority = st.selectbox("Update Priority",
-                    ["Low", "Medium", "High"],
-                    key=f"priority_{ticket['id']}"
-                )
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    new_status = st.selectbox("Update Status", 
+                        ["Open", "In Progress", "Closed"],
+                        key=f"status_{ticket['id']}"
+                    )
+                with col2:
+                    new_priority = st.selectbox("Update Priority",
+                        ["Low", "Medium", "High"],
+                        key=f"priority_{ticket['id']}"
+                    )
+                with col3:
+                    if st.session_state.user['role'] in ['admin', 'agent']:
+                        agents = [u for u in user_model.get_all_users() if u['role'] in ['admin', 'agent']]
+                        agent_options = [(None, "Unassigned")] + [(str(a['id']), a['email']) for a in agents]
+                        current_assigned = str(ticket['assigned_to']) if ticket['assigned_to'] else None
+                        selected_agent = st.selectbox(
+                            "Assign To",
+                            options=[id for id, _ in agent_options],
+                            format_func=lambda x: dict(agent_options)[x],
+                            index=next((i for i, (id, _) in enumerate(agent_options) if id == current_assigned), 0),
+                            key=f"assign_{ticket['id']}"
+                        )
+                        assigned_to = int(selected_agent) if selected_agent else None
+                    else:
+                        assigned_to = ticket['assigned_to']
                 
                 if st.button("Update", key=f"update_{ticket['id']}"):
                     ticket_model.update_ticket(
                         ticket['id'],
                         status=new_status,
-                        priority=new_priority
+                        priority=new_priority,
+                        assigned_to=assigned_to
                     )
+                    
+                    # Notify ticket creator
                     email_notifier.notify_ticket_updated(ticket, ticket['creator_email'])
+                    
+                    # Notify assigned agent if changed
+                    if assigned_to and assigned_to != ticket['assigned_to']:
+                        assigned_user = user_model.get_user_by_id(assigned_to)
+                        if assigned_user:
+                            email_notifier.notify_ticket_assigned(ticket, assigned_user['email'])
+                    
                     st.success("Ticket updated successfully")
                     st.rerun()
     
