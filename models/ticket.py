@@ -59,11 +59,15 @@ class Ticket:
         return self.db.execute(query, tuple(params))
 
     def add_comment(self, ticket_id, user_id, content, is_private=False):
+        if not content or not content.strip():
+            return None
+            
         query = """
             INSERT INTO comments (ticket_id, user_id, content, is_private)
-            VALUES (%s, %s, %s, %s) RETURNING id
+            VALUES (%s, %s, %s, %s) RETURNING id, ticket_id, user_id, content, is_private
         """
-        return self.db.execute(query, (ticket_id, user_id, content, is_private))
+        result = self.db.execute(query, (ticket_id, user_id, content.strip(), is_private))
+        return result[0] if result else None
 
     def get_ticket_comments(self, ticket_id):
         query = """

@@ -261,6 +261,20 @@ def render_tickets():
                         assigned_to=assigned_to
                     )
                     
+                    # Add initial comment with the description
+                    if description:
+                        try:
+                            comment_result = ticket_model.add_comment(
+                                ticket_id=new_ticket[0]['id'],
+                                user_id=st.session_state.user['id'],
+                                content=description,
+                                is_private=False
+                            )
+                            if not comment_result:
+                                st.warning("Initial comment was not saved properly")
+                        except Exception as e:
+                            st.error(f"Error saving initial comment: {str(e)}")
+                    
                     # Save custom field values
                     for field_id, value in custom_field_values.items():
                         if isinstance(value, (list, set)):
