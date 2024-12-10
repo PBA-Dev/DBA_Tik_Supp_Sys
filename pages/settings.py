@@ -43,6 +43,9 @@ def render_settings():
                 ["Text", "Number", "Date", "Dropdown", "MultiSelect", "Checkbox"]
             )
             
+            help_text = st.text_input("Help Text", help="Explanatory text that appears below the field")
+            
+            # Field options for dropdown and multiselect
             field_options = None
             if field_type in ["Dropdown", "MultiSelect"]:
                 options_input = st.text_area(
@@ -51,7 +54,64 @@ def render_settings():
                 )
                 if options_input:
                     field_options = [opt.strip() for opt in options_input.split('\n') if opt.strip()]
+            
+            # Validation rules based on field type
+            validation_rules = {}
+            if field_type == "Text":
+                regex_pattern = st.text_input(
+                    "Validation Pattern (regex)",
+                    help="Optional: Enter a regular expression pattern for validation"
+                )
+                min_length = st.number_input("Minimum Length", min_value=0, value=0)
+                max_length = st.number_input("Maximum Length", min_value=0, value=0)
+                if regex_pattern:
+                    validation_rules["pattern"] = regex_pattern
+                if min_length > 0:
+                    validation_rules["min_length"] = min_length
+                if max_length > 0:
+                    validation_rules["max_length"] = max_length
                     
+            elif field_type == "Number":
+                min_value = st.number_input("Minimum Value", value=0)
+                max_value = st.number_input("Maximum Value", value=0)
+                if min_value != 0:
+                    validation_rules["min_value"] = min_value
+                if max_value != 0:
+                    validation_rules["max_value"] = max_value
+            
+            # Field dependencies
+            existing_fields = [f for f in custom_field.get_all_fields() if f['field_type'] in ["Dropdown", "MultiSelect", "Checkbox"]]
+            if existing_fields:
+                st.subheader("Field Dependencies")
+                add_dependency = st.checkbox("Add dependency rule")
+                
+                if add_dependency:
+                    depends_on_field = st.selectbox(
+                        "Show this field when",
+                        options=[(f['id'], f['field_name']) for f in existing_fields],
+                        format_func=lambda x: x[1]
+                    )
+                    if depends_on_field:
+                        field_id, _ = depends_on_field
+                        depend_field = next(f for f in existing_fields if f['id'] == field_id)
+                        
+                        if depend_field['field_type'] == "Checkbox":
+                            show_when = st.radio("Show when value is", ["True", "False"])
+                            validation_rules["depends_on"] = {
+                                "field_id": field_id,
+                                "value": show_when == "True"
+                            }
+                        else:
+                            selected_values = st.multiselect(
+                                "Show when value is",
+                                options=depend_field['field_options']
+                            )
+                            if selected_values:
+                                validation_rules["depends_on"] = {
+                                    "field_id": field_id,
+                                    "values": selected_values
+                                }
+            
             is_required = st.checkbox("Required Field")
             
             if st.button("Create Field"):
@@ -65,7 +125,10 @@ def render_settings():
                             field_name=field_name,
                             field_type=field_type,
                             field_options=field_options,
-                            is_required=is_required
+                            is_required=is_required,
+                            validation_rules=validation_rules if validation_rules else None,
+                            help_text=help_text if help_text.strip() else None,
+                            depends_on=validation_rules.get("depends_on") if validation_rules else None
                         )
                         st.success("Custom field created successfully")
                         st.rerun()

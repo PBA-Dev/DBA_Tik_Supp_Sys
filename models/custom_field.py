@@ -4,12 +4,18 @@ class CustomField:
     def __init__(self):
         self.db = Database()
 
-    def create_field(self, field_name, field_type, field_options=None, is_required=False):
+    def create_field(self, field_name, field_type, field_options=None, is_required=False, validation_rules=None, help_text=None, depends_on=None):
         query = """
-            INSERT INTO custom_fields (field_name, field_type, field_options, is_required)
-            VALUES (%s, %s, %s, %s) RETURNING id
+            INSERT INTO custom_fields (
+                field_name, field_type, field_options, is_required, 
+                validation_rules, help_text, depends_on
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id
         """
-        return self.db.execute(query, (field_name, field_type, field_options, is_required))
+        return self.db.execute(query, (
+            field_name, field_type, field_options, is_required,
+            validation_rules, help_text, depends_on
+        ))
 
     def get_all_fields(self):
         query = """
