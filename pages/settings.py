@@ -7,9 +7,9 @@ def render_settings():
     
     st.title("System Settings")
     
-    tabs = st.tabs(["Email Settings", "File Upload Settings", "Custom Fields"])
+    tab1, tab2, tab3 = st.tabs(["Email Settings", "File Upload Settings", "Custom Fields"])
     
-    with tabs[0]:
+    with tab1:
         st.subheader("Email Settings")
         smtp_server = st.text_input("SMTP Server", value="smtp.yourdomain.com")
         smtp_port = st.number_input("SMTP Port", value=587)
@@ -19,7 +19,7 @@ def render_settings():
         if st.button("Save Email Settings"):
             st.success("Email settings saved successfully")
     
-    with tabs[1]:
+    with tab2:
         st.subheader("File Upload Settings")
         max_file_size = st.number_input("Max File Size (MB)", value=5)
         allowed_extensions = st.multiselect(
@@ -31,7 +31,7 @@ def render_settings():
         if st.button("Save Upload Settings"):
             st.success("File upload settings saved successfully")
             
-    with tabs[2]:
+    with tab3:
         st.subheader("Custom Fields")
         custom_field = CustomField()
         
