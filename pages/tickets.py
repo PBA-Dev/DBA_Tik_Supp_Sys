@@ -3,6 +3,7 @@ import time
 from utils.auth import require_auth
 from models.ticket import Ticket
 from models.user import User
+from models.custom_field import CustomField
 from components.rich_text import create_rich_text_editor
 from components.file_handler import FileHandler
 from utils.email import EmailNotifier
@@ -16,6 +17,7 @@ def render_tickets():
     user_model = User()
     file_handler = FileHandler()
     email_notifier = EmailNotifier()
+    custom_field = CustomField()
     
     tab1, tab2 = st.tabs(["Ticket List", "Create Ticket"])
     
@@ -48,6 +50,16 @@ def render_tickets():
                 st.write(f"Priority: {ticket['priority']}")
                 st.write(f"Category: {ticket['category']}")
                 st.write(f"Created by: {ticket['creator_email']}")
+                
+                # Display custom field values
+                field_values = custom_field.get_ticket_field_values(ticket['id'])
+                if field_values:
+                    st.subheader("Additional Information")
+                    for field_value in field_values:
+                        value = field_value['field_value']
+                        if field_value['field_type'] == 'MultiSelect' and value:
+                            value = ', '.join(value.split(','))
+                        st.write(f"{field_value['field_name']}: {value}")
                 
                 # Show attachments
                 attachments = file_handler.get_ticket_attachments(ticket['id'])
@@ -171,6 +183,47 @@ def render_tickets():
         category = st.selectbox("Category", ["Technical", "Billing", "General"])
         priority = st.selectbox("Priority", ["Low", "Medium", "High"])
         
+        # Custom Fields
+        st.subheader("Additional Information")
+        custom_fields = custom_field.get_all_fields()
+        custom_field_values = {}
+        
+        if custom_fields:
+            for field in custom_fields:
+                field_id = field['id']
+                if field['field_type'] == 'Text':
+                    custom_field_values[field_id] = st.text_input(
+                        f"{field['field_name']}" + (" *" if field['is_required'] else ""),
+                        key=f"custom_{field_id}"
+                    )
+                elif field['field_type'] == 'Number':
+                    custom_field_values[field_id] = st.number_input(
+                        f"{field['field_name']}" + (" *" if field['is_required'] else ""),
+                        key=f"custom_{field_id}"
+                    )
+                elif field['field_type'] == 'Date':
+                    custom_field_values[field_id] = st.date_input(
+                        f"{field['field_name']}" + (" *" if field['is_required'] else ""),
+                        key=f"custom_{field_id}"
+                    )
+                elif field['field_type'] == 'Dropdown':
+                    custom_field_values[field_id] = st.selectbox(
+                        f"{field['field_name']}" + (" *" if field['is_required'] else ""),
+                        options=field['field_options'] if field['field_options'] else [],
+                        key=f"custom_{field_id}"
+                    )
+                elif field['field_type'] == 'MultiSelect':
+                    custom_field_values[field_id] = st.multiselect(
+                        f"{field['field_name']}" + (" *" if field['is_required'] else ""),
+                        options=field['field_options'] if field['field_options'] else [],
+                        key=f"custom_{field_id}"
+                    )
+                elif field['field_type'] == 'Checkbox':
+                    custom_field_values[field_id] = st.checkbox(
+                        f"{field['field_name']}" + (" *" if field['is_required'] else ""),
+                        key=f"custom_{field_id}"
+                    )
+        
         # Allow admin/agents to assign tickets to users during creation
         assigned_to = None
         if st.session_state.user['role'] in ['admin', 'agent']:
@@ -207,6 +260,14 @@ def render_tickets():
                         created_by=st.session_state.user['id'],
                         assigned_to=assigned_to
                     )
+                    
+                    # Save custom field values
+                    for field_id, value in custom_field_values.items():
+                        if isinstance(value, (list, set)):
+                            value = ','.join(map(str, value))
+                        elif not isinstance(value, (str, int, float)):
+                            value = str(value)
+                        custom_field.save_field_value(new_ticket[0]['id'], field_id, value)
                     
                     if uploaded_file:
                         file_handler.save_file(new_ticket[0]['id'], uploaded_file)
