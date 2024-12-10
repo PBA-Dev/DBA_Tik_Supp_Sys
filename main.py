@@ -60,7 +60,7 @@ def style_sidebar():
     section[data-testid="stSidebar"] .element-container div {
         color: #ffffff !important;
     }
-    section[data-testid="stSidebar"] .stButton button {
+    section[data-testid="stSidebar"] div[data-testid="stButton"] button {
         color: #000000 !important;
         background-color: #ffffff !important;
     }
