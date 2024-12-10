@@ -31,6 +31,12 @@ def hide_streamlit_elements():
     .eczjsme13 {display: none !important;}
     .main {visibility: hidden;}
     div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"] {display: none;}
+    </style>
+    """, unsafe_allow_html=True)
+
+def hide_sidebar():
+    st.markdown("""
+    <style>
     section[data-testid="stSidebar"] {display: none !important;}
     </style>
     """, unsafe_allow_html=True)
@@ -68,6 +74,7 @@ def main():
     # Main content area
     if not check_authentication():
         hide_streamlit_elements()
+        hide_sidebar()
         st.title("Support Ticket System")
         
         tab1, tab2 = st.tabs(["Login", "Register"])
