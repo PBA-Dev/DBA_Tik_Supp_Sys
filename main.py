@@ -31,6 +31,7 @@ def hide_streamlit_elements():
     .eczjsme13 {display: none !important;}
     .main {visibility: hidden;}
     div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"] {display: none;}
+    section[data-testid="stSidebar"] {display: none !important;}
     </style>
     """, unsafe_allow_html=True)
 
@@ -55,6 +56,7 @@ def style_sidebar():
     }
     section[data-testid="stSidebar"] .stButton button {
         color: #000000 !important;
+        background-color: #ffffff !important;
     }
     </style>
     """, unsafe_allow_html=True)
