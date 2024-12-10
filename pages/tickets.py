@@ -56,10 +56,21 @@ def render_tickets():
                 if field_values:
                     st.subheader("Additional Information")
                     for field_value in field_values:
-                        value = field_value['field_value']
-                        if field_value['field_type'] == 'MultiSelect' and value:
-                            value = ', '.join(value.split(','))
-                        st.write(f"{field_value['field_name']}: {value}")
+                        col1, col2 = st.columns([1, 3])
+                        with col1:
+                            st.markdown(f"**{field_value['field_name']}:**")
+                        with col2:
+                            value = field_value['field_value']
+                            if field_value['field_type'] == 'MultiSelect' and value:
+                                value = ', '.join(value.split(','))
+                            elif field_value['field_type'] == 'Checkbox':
+                                value = '✓' if value.lower() == 'true' else '✗'
+                            elif field_value['field_type'] == 'Date':
+                                try:
+                                    value = value.split()[0]  # Get only the date part
+                                except:
+                                    pass
+                            st.write(value)
                 
                 # Show attachments
                 attachments = file_handler.get_ticket_attachments(ticket['id'])
@@ -244,9 +255,28 @@ def render_tickets():
             st.session_state.creating_ticket = False
             
         if st.button("Create Ticket") and not st.session_state.creating_ticket:
+            validation_failed = False
+            
+            # Basic field validation
             if not title or not description:
                 st.error("Please fill in all required fields")
-            else:
+                validation_failed = True
+            
+            # Custom fields validation
+            if custom_fields:
+                for field in custom_fields:
+                    field_id = field['id']
+                    value = custom_field_values.get(field_id)
+                    
+                    if field['is_required']:
+                        if value is None or (isinstance(value, str) and not value.strip()):
+                            st.error(f"{field['field_name']} is required")
+                            validation_failed = True
+                        elif isinstance(value, list) and not value:
+                            st.error(f"Please select at least one option for {field['field_name']}")
+                            validation_failed = True
+            
+            if not validation_failed:
                 try:
                     # Set creating flag to prevent multiple submissions
                     st.session_state.creating_ticket = True
