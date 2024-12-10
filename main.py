@@ -64,8 +64,9 @@ def style_sidebar():
     section[data-testid="stSidebar"] .stButton button,
     section[data-testid="stSidebar"] button.st-emotion-cache-19rxjzo {
         color: #ffffff !important;
-        background-color: #4a4a4a !important;
-        border-color: #4a4a4a !important;
+        background-color: #d3d3d3 !important;
+        border-color: #d3d3d3 !important;
+        color: #000000 !important;
     }
     </style>
     """, unsafe_allow_html=True)
