@@ -53,6 +53,9 @@ def style_sidebar():
     section[data-testid="stSidebar"] .element-container div {
         color: #ffffff !important;
     }
+    section[data-testid="stSidebar"] .stButton button {
+        color: #000000 !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
