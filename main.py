@@ -18,37 +18,51 @@ st.set_page_config(
     }
 )
 
+def hide_streamlit_elements():
+    st.markdown("""
+    <style>
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    div[data-testid="stToolbar"] {visibility: hidden;}
+    div[data-testid="stDecoration"] {visibility: hidden;}
+    div[data-testid="stStatusWidget"] {visibility: hidden;}
+    .st-emotion-cache-1q2d4ya {display: none !important;}
+    .eczjsme13 {display: none !important;}
+    .main {visibility: hidden;}
+    div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"] {display: none;}
+    </style>
+    """, unsafe_allow_html=True)
+
+def style_sidebar():
+    st.markdown("""
+    <style>
+    section[data-testid="stSidebar"] {
+        width: 250px;
+        background-color: #262730;
+    }
+    section[data-testid="stSidebar"] * {
+        color: #ffffff !important;
+    }
+    section[data-testid="stSidebar"] .st-emotion-cache-16idsys p,
+    section[data-testid="stSidebar"] .st-emotion-cache-16idsys span,
+    section[data-testid="stSidebar"] .st-emotion-cache-16idsys label,
+    section[data-testid="stSidebar"] .st-emotion-cache-pkbazv,
+    section[data-testid="stSidebar"] .st-emotion-cache-16txtl3,
+    section[data-testid="stSidebar"] .st-emotion-cache-16idsys,
+    section[data-testid="stSidebar"] .element-container div {
+        color: #ffffff !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
 # Hide all Streamlit elements except the sidebar toggle
-st.markdown("""
-<style>
-#MainMenu {visibility: hidden;}
-header {visibility: hidden;}
-footer {visibility: hidden;}
-div[data-testid="stToolbar"] {visibility: hidden;}
-div[data-testid="stDecoration"] {visibility: hidden;}
-div[data-testid="stStatusWidget"] {visibility: hidden;}
-.st-emotion-cache-1q2d4ya {display: none !important;}
-.eczjsme13 {display: none !important;}
-.main {visibility: hidden;}
-section[data-testid="stSidebar"] {
-    width: 250px;
-    background-color: #262730;
-}
-section[data-testid="stSidebar"] .st-emotion-cache-16idsys p,
-section[data-testid="stSidebar"] .st-emotion-cache-16idsys span,
-section[data-testid="stSidebar"] .st-emotion-cache-16idsys label {
-    color: #ffffff !important;
-}
-div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"] {display: none;}
-section[data-testid="stSidebar"] .st-emotion-cache-pkbazv {
-    color: #ffffff !important;
-}
-</style>
-""", unsafe_allow_html=True)
+hide_streamlit_elements()
 
 def main():
     # Main content area
     if not check_authentication():
+        hide_streamlit_elements()
         st.title("Support Ticket System")
         
         tab1, tab2 = st.tabs(["Login", "Register"])
@@ -83,6 +97,8 @@ def main():
                         else:
                             st.error("Registration failed")
     else:
+        # Apply sidebar styling for authenticated users
+        style_sidebar()
         # Configure the sidebar for authenticated users
         with st.sidebar:
             st.markdown("### MAIN")
