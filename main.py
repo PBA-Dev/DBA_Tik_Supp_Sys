@@ -60,9 +60,12 @@ def style_sidebar():
     section[data-testid="stSidebar"] .element-container div {
         color: #ffffff !important;
     }
-    section[data-testid="stSidebar"] div[data-testid="stButton"] button {
+    section[data-testid="stSidebar"] div[data-testid="stButton"] button,
+    section[data-testid="stSidebar"] .stButton button,
+    section[data-testid="stSidebar"] button.st-emotion-cache-19rxjzo {
         color: #000000 !important;
         background-color: #ffffff !important;
+        border-color: #ffffff !important;
     }
     </style>
     """, unsafe_allow_html=True)
