@@ -12,7 +12,8 @@ def render_auth():
 
     tab1, tab2 = st.tabs(["Login", "Register"])
 
-    recaptcha = ReCaptcha()
+    # Temporarily disabled reCAPTCHA
+    # recaptcha = ReCaptcha()
     gdpr = GDPRCompliance()
     user_model = User()
 
@@ -23,27 +24,22 @@ def render_auth():
             email = st.text_input("Email", key="login_email")
             password = st.text_input("Password", type="password", key="login_password")
             
-            # Add reCAPTCHA
-            st.components.v1.html(
-                recaptcha.render(),
-                height=100
-            )
+            # reCAPTCHA temporarily disabled
+            # st.components.v1.html(
+            #     recaptcha.render(),
+            #     height=100
+            # )
             
             submitted = st.form_submit_button("Login")
             if submitted:
                 if not email or not password:
                     st.error("Please fill in all fields")
                 else:
-                    # Get reCAPTCHA response from session state
-                    recaptcha_response = st.session_state.get('g-recaptcha-response')
-                    if not recaptcha_response or not recaptcha.verify(recaptcha_response):
-                        st.error("Please complete the reCAPTCHA verification")
+                    if login_user(email, password):
+                        st.success("Login successful!")
+                        st.rerun()
                     else:
-                        if login_user(email, password):
-                            st.success("Login successful!")
-                            st.rerun()
-                        else:
-                            st.error("Invalid email or password")
+                        st.error("Invalid email or password")
 
     with tab2:
         st.subheader("Register")
@@ -55,8 +51,8 @@ def render_auth():
         # GDPR Consent
         consents = gdpr.render_consent_form()
         
-        # Add reCAPTCHA
-        st.markdown(recaptcha.render(), unsafe_allow_html=True)
+        # reCAPTCHA temporarily disabled
+        # st.markdown(recaptcha.render(), unsafe_allow_html=True)
         
         if st.button("Register"):
             if not new_email or not new_password or not confirm_password:
@@ -69,12 +65,6 @@ def render_auth():
                 
             if not consents['essential']:
                 st.error("You must agree to essential data processing to use this service")
-                return
-                
-            # Verify reCAPTCHA
-            recaptcha_response = st.query_params.get("g-recaptcha-response")
-            if not recaptcha.verify(recaptcha_response):
-                st.error("Please complete the reCAPTCHA verification")
                 return
                 
             try:
