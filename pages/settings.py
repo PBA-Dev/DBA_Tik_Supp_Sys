@@ -108,7 +108,7 @@ def render_settings():
                         st.write("- Add comment:")
                         st.text_area("Template", actions['comment'], disabled=True)
                     
-                    if st.button("Delete Macro", key=f"delete_{macro['id']}"):
+                    if st.button("Delete Macro", key=f"delete_macro_{macro['id']}"):
                         if macro_model.delete_macro(macro['id'], st.session_state.user['id']):
                             st.success("Macro deleted successfully")
                             st.rerun()
@@ -299,7 +299,7 @@ def render_settings():
                     with col2:
                         if st.button(
                             "Delete Field",
-                            key=f"delete_{field['id']}",
+                            key=f"delete_field_{field['id']}",
                             type="secondary",
                             disabled=not delete_confirm
                         ):
