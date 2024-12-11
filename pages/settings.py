@@ -129,7 +129,8 @@ def render_settings():
                             is_required=is_required,
                             validation_rules=validation_rules if validation_rules else None,
                             help_text=help_text if help_text.strip() else None,
-                            depends_on=validation_rules.get("depends_on") if validation_rules else None
+                            depends_on=validation_rules.get("depends_on") if validation_rules else None,
+                            user_id=st.session_state.user['id']
                         )
                         st.success(f"Custom field '{field_name}' created successfully")
                         time.sleep(0.5)  # Brief pause to show success message
@@ -172,7 +173,8 @@ def render_settings():
                                 field_id=field['id'],
                                 field_name=new_name,
                                 field_options=new_options,
-                                is_required=new_required
+                                is_required=new_required,
+                                user_id=st.session_state.user['id']
                             )
                             st.success("Field updated successfully")
                             st.rerun()
