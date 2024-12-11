@@ -200,40 +200,110 @@ def render_tickets():
         custom_field_values = {}
         
         if custom_fields:
-            for field in custom_fields:
+            # First, render fields without dependencies
+            independent_fields = [f for f in custom_fields if not f.get('depends_on')]
+            dependent_fields = [f for f in custom_fields if f.get('depends_on')]
+            
+            # Helper function to check if field should be shown based on dependencies
+            def should_show_field(field):
+                if not field.get('depends_on'):
+                    return True
+                    
+                depends_on = field['depends_on']
+                if not depends_on:
+                    return True
+                    
+                parent_field_id = depends_on.get('field_id')
+                if not parent_field_id:
+                    return True
+                    
+                parent_value = custom_field_values.get(parent_field_id)
+                if parent_value is None:
+                    return False
+                    
+                if 'value' in depends_on:  # Checkbox dependency
+                    return str(parent_value).lower() == str(depends_on['value']).lower()
+                elif 'values' in depends_on:  # Dropdown/MultiSelect dependency
+                    return parent_value in depends_on['values']
+                return True
+            
+            # Helper function to render a single field
+            def render_field(field):
                 field_id = field['id']
+                label = f"{field['field_name']}" + (" *" if field['is_required'] else "")
+                help = field.get('help_text', '')
+                
+                validation = field.get('validation_rules', {}) or {}
+                value = None
+                
                 if field['field_type'] == 'Text':
-                    custom_field_values[field_id] = st.text_input(
-                        f"{field['field_name']}" + (" *" if field['is_required'] else ""),
+                    value = st.text_input(
+                        label,
+                        help=help,
                         key=f"custom_{field_id}"
                     )
+                    # Validate text input
+                    if value and validation:
+                        if 'min_length' in validation and len(value) < validation['min_length']:
+                            st.error(f"Minimum length is {validation['min_length']} characters")
+                        if 'max_length' in validation and len(value) > validation['max_length']:
+                            st.error(f"Maximum length is {validation['max_length']} characters")
+                        if 'pattern' in validation:
+                            import re
+                            if not re.match(validation['pattern'], value):
+                                st.error("Input format is invalid")
+                
                 elif field['field_type'] == 'Number':
-                    custom_field_values[field_id] = st.number_input(
-                        f"{field['field_name']}" + (" *" if field['is_required'] else ""),
+                    min_val = validation.get('min_value', None)
+                    max_val = validation.get('max_value', None)
+                    value = st.number_input(
+                        label,
+                        min_value=min_val if min_val is not None else None,
+                        max_value=max_val if max_val is not None else None,
+                        help=help,
                         key=f"custom_{field_id}"
                     )
+                
                 elif field['field_type'] == 'Date':
-                    custom_field_values[field_id] = st.date_input(
-                        f"{field['field_name']}" + (" *" if field['is_required'] else ""),
+                    value = st.date_input(
+                        label,
+                        help=help,
                         key=f"custom_{field_id}"
                     )
+                
                 elif field['field_type'] == 'Dropdown':
-                    custom_field_values[field_id] = st.selectbox(
-                        f"{field['field_name']}" + (" *" if field['is_required'] else ""),
+                    value = st.selectbox(
+                        label,
                         options=field['field_options'] if field['field_options'] else [],
+                        help=help,
                         key=f"custom_{field_id}"
                     )
+                
                 elif field['field_type'] == 'MultiSelect':
-                    custom_field_values[field_id] = st.multiselect(
-                        f"{field['field_name']}" + (" *" if field['is_required'] else ""),
+                    value = st.multiselect(
+                        label,
                         options=field['field_options'] if field['field_options'] else [],
+                        help=help,
                         key=f"custom_{field_id}"
                     )
+                
                 elif field['field_type'] == 'Checkbox':
-                    custom_field_values[field_id] = st.checkbox(
-                        f"{field['field_name']}" + (" *" if field['is_required'] else ""),
+                    value = st.checkbox(
+                        label,
+                        help=help,
                         key=f"custom_{field_id}"
                     )
+                
+                return value
+            
+            # Render independent fields first
+            for field in independent_fields:
+                custom_field_values[field['id']] = render_field(field)
+            
+            # Then render dependent fields if their conditions are met
+            for field in dependent_fields:
+                if should_show_field(field):
+                    custom_field_values[field['id']] = render_field(field)
         
         # Allow admin/agents to assign tickets to users during creation
         assigned_to = None
