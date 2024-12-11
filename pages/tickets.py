@@ -29,23 +29,83 @@ def render_tickets():
             user_role=st.session_state.user['role']
         )
         
-        # Filters
-        col1, col2, col3 = st.columns(3)
+        # Load saved filters
+        from models.saved_filter import SavedFilter
+        saved_filter_model = SavedFilter()
+        user_filters = saved_filter_model.get_user_filters(st.session_state.user['id'])
         
+        # Filter selection and management
+        col1, col2 = st.columns([3, 1])
         with col1:
-            status_filter = st.selectbox("Status", ["All", "Open", "In Progress", "Closed"])
-        with col2:
-            priority_filter = st.selectbox("Priority", ["All", "Low", "Medium", "High"])
-        with col3:
-            search = st.text_input("Search tickets")
+            if user_filters:
+                selected_filter = st.selectbox(
+                    "Apply Saved Filter",
+                    ["None"] + [(f['id'], f['name']) for f in user_filters],
+                    format_func=lambda x: x[1] if isinstance(x, tuple) else x
+                )
+            else:
+                st.info("No saved filters. Create one by applying filters and saving them.")
+                selected_filter = "None"
         
+        # Filters
+        with st.expander("Filter Options", expanded=selected_filter == "None"):
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                status_filter = st.selectbox("Status", ["All", "Open", "In Progress", "Closed"])
+            with col2:
+                priority_filter = st.selectbox("Priority", ["All", "Low", "Medium", "High"])
+            with col3:
+                search = st.text_input("Search tickets")
+            
+            # Save filter button
+            save_col1, save_col2 = st.columns([3, 1])
+            with save_col1:
+                new_filter_name = st.text_input("Filter Name")
+            with save_col2:
+                if st.button("Save Filter"):
+                    if new_filter_name:
+                        filter_criteria = {
+                            'status': status_filter,
+                            'priority': priority_filter,
+                            'search': search
+                        }
+                        try:
+                            saved_filter_model.create_filter(
+                                name=new_filter_name,
+                                user_id=st.session_state.user['id'],
+                                filter_criteria=filter_criteria
+                            )
+                            st.success(f"Filter '{new_filter_name}' saved successfully")
+                            time.sleep(0.5)
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Failed to save filter: {str(e)}")
+                    else:
+                        st.error("Please enter a name for the filter")
+        
+        # Apply filters
         filtered_tickets = tickets
-        if status_filter != "All":
-            filtered_tickets = [t for t in filtered_tickets if t['status'].lower() == status_filter.lower()]
-        if priority_filter != "All":
-            filtered_tickets = [t for t in filtered_tickets if t['priority'].lower() == priority_filter.lower()]
-        if search:
-            filtered_tickets = [t for t in filtered_tickets if search.lower() in t['title'].lower()]
+        
+        if isinstance(selected_filter, tuple):
+            # Apply saved filter
+            saved_filter = next(f for f in user_filters if f['id'] == selected_filter[0])
+            filter_criteria = saved_filter['filter_criteria']
+            
+            if filter_criteria.get('status') != "All":
+                filtered_tickets = [t for t in filtered_tickets if t['status'].lower() == filter_criteria['status'].lower()]
+            if filter_criteria.get('priority') != "All":
+                filtered_tickets = [t for t in filtered_tickets if t['priority'].lower() == filter_criteria['priority'].lower()]
+            if filter_criteria.get('search'):
+                filtered_tickets = [t for t in filtered_tickets if filter_criteria['search'].lower() in t['title'].lower()]
+        else:
+            # Apply manual filters
+            if status_filter != "All":
+                filtered_tickets = [t for t in filtered_tickets if t['status'].lower() == status_filter.lower()]
+            if priority_filter != "All":
+                filtered_tickets = [t for t in filtered_tickets if t['priority'].lower() == priority_filter.lower()]
+            if search:
+                filtered_tickets = [t for t in filtered_tickets if search.lower() in t['title'].lower()]
         
         for ticket in filtered_tickets:
             with st.expander(f"{ticket['title']} - {ticket['status'].upper()}"):
