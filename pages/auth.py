@@ -24,11 +24,14 @@ def render_auth():
             email = st.text_input("Email", key="login_email")
             password = st.text_input("Password", type="password", key="login_password")
             
-            # reCAPTCHA temporarily disabled
+            # reCAPTCHA integration is disabled for now
+            # Will be enabled once proper keys are configured
             # st.components.v1.html(
             #     recaptcha.render(),
             #     height=100
             # )
+            # Skip reCAPTCHA verification for now
+            recaptcha_verified = True
             
             submitted = st.form_submit_button("Login")
             if submitted:
