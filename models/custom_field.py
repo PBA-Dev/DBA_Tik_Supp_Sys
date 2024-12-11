@@ -1,4 +1,6 @@
+import json
 from db.database import Database
+from psycopg2.extras import Json
 
 class CustomField:
     def __init__(self):
@@ -12,9 +14,13 @@ class CustomField:
             )
             VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id
         """
+        # Convert dictionaries to JSON objects for PostgreSQL
+        validation_rules_json = Json(validation_rules) if validation_rules else None
+        depends_on_json = Json(depends_on) if depends_on else None
+        
         return self.db.execute(query, (
             field_name, field_type, field_options, is_required,
-            validation_rules, help_text, depends_on
+            validation_rules_json, help_text, depends_on_json
         ))
 
     def get_all_fields(self):
