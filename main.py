@@ -19,19 +19,22 @@ st.set_page_config(
 )
 
 def hide_streamlit_elements():
+    # Add security headers
     st.markdown("""
-    <style>
-    #MainMenu {visibility: hidden;}
-    header {visibility: hidden;}
-    footer {visibility: hidden;}
-    div[data-testid="stToolbar"] {visibility: hidden;}
-    div[data-testid="stDecoration"] {visibility: hidden;}
-    div[data-testid="stStatusWidget"] {visibility: hidden;}
-    .st-emotion-cache-1q2d4ya {display: none !important;}
-    .eczjsme13 {display: none !important;}
-    .main {visibility: hidden;}
-    div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"] {display: none;}
-    </style>
+        <meta http-equiv="Content-Security-Policy" 
+              content="default-src 'self'; frame-ancestors 'none';">
+        <style>
+        #MainMenu {visibility: hidden;}
+        header {visibility: hidden;}
+        footer {visibility: hidden;}
+        div[data-testid="stToolbar"] {visibility: hidden;}
+        div[data-testid="stDecoration"] {visibility: hidden;}
+        div[data-testid="stStatusWidget"] {visibility: hidden;}
+        .st-emotion-cache-1q2d4ya {display: none !important;}
+        .eczjsme13 {display: none !important;}
+        .main {visibility: hidden;}
+        div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"] {display: none;}
+        </style>
     """, unsafe_allow_html=True)
 
 def hide_sidebar():
