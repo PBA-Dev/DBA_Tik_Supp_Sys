@@ -130,7 +130,8 @@ def render_settings():
                             help_text=help_text if help_text.strip() else None,
                             depends_on=validation_rules.get("depends_on") if validation_rules else None
                         )
-                        st.success("Custom field created successfully")
+                        st.success(f"Custom field '{field_name}' created successfully")
+                        time.sleep(0.5)  # Brief pause to show success message
                         st.rerun()
                     except Exception as e:
                         st.error(f"Failed to create custom field: {str(e)}")

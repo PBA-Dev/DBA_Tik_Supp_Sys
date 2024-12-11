@@ -174,8 +174,9 @@ def render_tickets():
                             except Exception:
                                 pass  # Ignore notification errors to prevent blocking
                             
-                            st.success("Ticket updated successfully")
+                            st.success(f"Ticket '{ticket['title']}' updated successfully")
                             st.session_state['navigation'] = "Dashboard"
+                            time.sleep(0.5)  # Brief pause to show success message
                             st.rerun()
                         except Exception as e:
                             st.error(f"Failed to update ticket: {str(e)}")
@@ -411,8 +412,8 @@ def render_tickets():
                     st.session_state.description = ""
                     st.session_state.uploaded_file = None
                     
-                    st.success("Ticket created successfully")
-                    time.sleep(0.1)  # Small delay to ensure state is updated
+                    st.success(f"Ticket '{title}' created successfully with {priority} priority")
+                    time.sleep(0.5)  # Brief pause to show success message
                     st.rerun()
                 except Exception as e:
                     st.error(f"Failed to create ticket: {str(e)}")
