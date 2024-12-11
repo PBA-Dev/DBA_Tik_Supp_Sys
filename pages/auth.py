@@ -3,9 +3,10 @@ from models.user import User
 from utils.recaptcha import ReCaptcha
 from utils.gdpr import GDPRCompliance
 import json
+from utils.auth import login_user
 
 def render_auth():
-    if "user" in st.session_state:
+    if "authenticated" in st.session_state and st.session_state.authenticated:
         st.success("You are already logged in")
         return
 
@@ -18,30 +19,31 @@ def render_auth():
     with tab1:
         st.subheader("Login")
         
-        email = st.text_input("Email", key="login_email")
-        password = st.text_input("Password", type="password", key="login_password")
-        
-        # Add reCAPTCHA
-        st.markdown(recaptcha.render(), unsafe_allow_html=True)
-        
-        if st.button("Login"):
-            if not email or not password:
-                st.error("Please fill in all fields")
-                return
-                
-            # Verify reCAPTCHA
-            recaptcha_response = st.query_params.get("g-recaptcha-response")
-            if not recaptcha.verify(recaptcha_response):
-                st.error("Please complete the reCAPTCHA verification")
-                return
-                
-            user = user_model.authenticate(email, password)
-            if user:
-                st.session_state.user = user
-                st.success("Login successful!")
-                st.rerun()
-            else:
-                st.error("Invalid email or password")
+        with st.form("login_form"):
+            email = st.text_input("Email", key="login_email")
+            password = st.text_input("Password", type="password", key="login_password")
+            
+            # Add reCAPTCHA
+            st.components.v1.html(
+                recaptcha.render(),
+                height=100
+            )
+            
+            submitted = st.form_submit_button("Login")
+            if submitted:
+                if not email or not password:
+                    st.error("Please fill in all fields")
+                else:
+                    # Get reCAPTCHA response from session state
+                    recaptcha_response = st.session_state.get('g-recaptcha-response')
+                    if not recaptcha_response or not recaptcha.verify(recaptcha_response):
+                        st.error("Please complete the reCAPTCHA verification")
+                    else:
+                        if login_user(email, password):
+                            st.success("Login successful!")
+                            st.rerun()
+                        else:
+                            st.error("Invalid email or password")
 
     with tab2:
         st.subheader("Register")

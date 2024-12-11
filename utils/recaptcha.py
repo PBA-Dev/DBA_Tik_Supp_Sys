@@ -10,9 +10,20 @@ class ReCaptcha:
 
     def render(self):
         return f"""
-            <div class="g-recaptcha" data-sitekey="{self.site_key}"></div>
-            <script src="https://www.google.com/recaptcha/api.js" async defer></script>
-            <br/>
+            <div>
+                <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+                <div class="g-recaptcha" 
+                     data-sitekey="{self.site_key}"
+                     data-callback="onRecaptchaComplete"></div>
+                <script>
+                    function onRecaptchaComplete(token) {{
+                        window.parent.postMessage({{
+                            type: 'streamlit:set_component_value',
+                            data: token
+                        }}, '*');
+                    }}
+                </script>
+            </div>
         """
 
     def verify(self, response_token):
@@ -25,7 +36,8 @@ class ReCaptcha:
                 data={
                     'secret': self.secret_key,
                     'response': response_token
-                }
+                },
+                timeout=5
             )
             result = r.json()
             return result.get('success', False)
