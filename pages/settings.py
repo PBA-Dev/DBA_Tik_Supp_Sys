@@ -8,7 +8,7 @@ def render_settings():
     
     st.title("System Settings")
     
-    tab1, tab2, tab3, tab4 = st.tabs(["Email Settings", "File Upload Settings", "Custom Fields", "Audit Logs"])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["Email Settings", "File Upload Settings", "Custom Fields", "Macros", "Audit Logs"])
     
     with tab1:
         st.subheader("Email Settings")
@@ -36,6 +36,86 @@ def render_settings():
         st.subheader("Custom Fields")
         
     with tab4:
+        st.subheader("Macros")
+        from models.macro import Macro
+        
+        macro_model = Macro()
+        
+        # Create new macro
+        with st.expander("Create New Macro"):
+            with st.form("create_macro"):
+                macro_name = st.text_input("Macro Name")
+                macro_description = st.text_area("Description")
+                
+                st.subheader("Actions")
+                update_status = st.checkbox("Update Status")
+                new_status = st.selectbox("New Status", ["Open", "In Progress", "Closed"]) if update_status else None
+                
+                update_priority = st.checkbox("Update Priority")
+                new_priority = st.selectbox("New Priority", ["Low", "Medium", "High"]) if update_priority else None
+                
+                add_comment = st.checkbox("Add Comment")
+                comment_template = st.text_area("Comment Template") if add_comment else None
+                
+                submitted = st.form_submit_button("Create Macro")
+                
+                if submitted:
+                    if not macro_name:
+                        st.error("Macro name is required")
+                    else:
+                        actions = {}
+                        if update_status:
+                            actions['status'] = new_status
+                        if update_priority:
+                            actions['priority'] = new_priority
+                        if add_comment:
+                            actions['comment'] = comment_template
+                            
+                        if not actions:
+                            st.error("Please select at least one action")
+                        else:
+                            try:
+                                macro_model.create_macro(
+                                    name=macro_name,
+                                    user_id=st.session_state.user['id'],
+                                    actions=actions,
+                                    description=macro_description
+                                )
+                                st.success("Macro created successfully")
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Failed to create macro: {str(e)}")
+        
+        # List existing macros
+        st.subheader("Your Macros")
+        macros = macro_model.get_user_macros(st.session_state.user['id'])
+        
+        if not macros:
+            st.info("You haven't created any macros yet")
+        else:
+            for macro in macros:
+                with st.expander(f"{macro['name']}"):
+                    if macro['description']:
+                        st.write("Description:", macro['description'])
+                    
+                    st.write("Actions:")
+                    actions = macro['actions']
+                    if 'status' in actions:
+                        st.write(f"- Update status to: {actions['status']}")
+                    if 'priority' in actions:
+                        st.write(f"- Update priority to: {actions['priority']}")
+                    if 'comment' in actions:
+                        st.write("- Add comment:")
+                        st.text_area("Template", actions['comment'], disabled=True)
+                    
+                    if st.button("Delete Macro", key=f"delete_{macro['id']}"):
+                        if macro_model.delete_macro(macro['id'], st.session_state.user['id']):
+                            st.success("Macro deleted successfully")
+                            st.rerun()
+                        else:
+                            st.error("Failed to delete macro")
+                            
+    with tab5:
         st.subheader("Audit Logs")
         from db.database import Database
         

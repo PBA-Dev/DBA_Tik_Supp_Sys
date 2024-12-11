@@ -4,7 +4,7 @@ from utils.auth import require_auth
 from models.ticket import Ticket
 from models.user import User
 from models.custom_field import CustomField
-from models.saved_filter import SavedFilter
+from models.macro import Macro
 from components.rich_text import create_rich_text_editor
 from components.file_handler import FileHandler
 from utils.email import EmailNotifier
@@ -29,12 +29,8 @@ def render_tickets():
             user_role=st.session_state.user['role']
         )
         
-        # Load saved filters
-        saved_filter_model = SavedFilter()
-        saved_filters = saved_filter_model.get_user_filters(st.session_state.user['id'])
-        
-        # Filters section
-        col1, col2, col3, col4 = st.columns([2, 2, 2, 3])
+        # Filters
+        col1, col2, col3 = st.columns(3)
         
         with col1:
             status_filter = st.selectbox("Status", ["All", "Open", "In Progress", "Closed"])
@@ -42,56 +38,6 @@ def render_tickets():
             priority_filter = st.selectbox("Priority", ["All", "Low", "Medium", "High"])
         with col3:
             search = st.text_input("Search tickets")
-            
-        # Saved filters interface
-        with col4:
-            if saved_filters:
-                selected_filter = st.selectbox(
-                    "Apply Saved Filter",
-                    ["None"] + [(f['id'], f['name']) for f in saved_filters],
-                    format_func=lambda x: x[1] if isinstance(x, tuple) else x
-                )
-                
-                if isinstance(selected_filter, tuple):
-                    filter_data = next(f for f in saved_filters if f['id'] == selected_filter[0])
-                    criteria = filter_data['filter_criteria']
-                    status_filter = criteria.get('status', status_filter)
-                    priority_filter = criteria.get('priority', priority_filter)
-                    search = criteria.get('search', search)
-                    
-            # Save current filter button and modal
-            if st.button("Save Current Filter"):
-                st.session_state.show_save_filter = True
-                
-        if getattr(st.session_state, 'show_save_filter', False):
-            with st.form("save_filter_form"):
-                filter_name = st.text_input("Filter Name")
-                is_macro = st.checkbox("Save as Macro")
-                
-                col1, col2 = st.columns(2)
-                with col1:
-                    save = st.form_submit_button("Save")
-                with col2:
-                    cancel = st.form_submit_button("Cancel")
-                
-                if save and filter_name:
-                    filter_criteria = {
-                        'status': status_filter,
-                        'priority': priority_filter,
-                        'search': search
-                    }
-                    saved_filter_model.create_filter(
-                        name=filter_name,
-                        user_id=st.session_state.user['id'],
-                        filter_criteria=filter_criteria,
-                        is_macro=is_macro
-                    )
-                    st.success(f"Filter '{filter_name}' saved successfully")
-                    del st.session_state.show_save_filter
-                    st.rerun()
-                elif cancel:
-                    del st.session_state.show_save_filter
-                    st.rerun()
         
         filtered_tickets = tickets
         if status_filter != "All":
@@ -207,6 +153,36 @@ def render_tickets():
                         assigned_to = int(selected_agent) if selected_agent else None
                     else:
                         assigned_to = ticket['assigned_to']
+                
+                # Add macro selection before the update form
+                macro_model = Macro()
+                user_macros = macro_model.get_user_macros(st.session_state.user['id'])
+                
+                if user_macros:
+                    selected_macro = st.selectbox(
+                        "Apply Macro",
+                        ["Select a macro..."] + [(m['id'], m['name']) for m in user_macros],
+                        format_func=lambda x: x[1] if isinstance(x, tuple) else x,
+                        key=f"macro_{ticket['id']}"
+                    )
+                    
+                    if isinstance(selected_macro, tuple):
+                        macro = next(m for m in user_macros if m['id'] == selected_macro[0])
+                        actions = macro['actions']
+                        
+                        if 'status' in actions:
+                            new_status = actions['status']
+                        if 'priority' in actions:
+                            new_priority = actions['priority']
+                        if 'comment' in actions and actions['comment'].strip():
+                            ticket_model.add_comment(
+                                ticket_id=ticket['id'],
+                                user_id=st.session_state.user['id'],
+                                content=actions['comment'],
+                                is_private=False
+                            )
+                            st.success("Macro applied successfully")
+                            st.rerun()
                 
                 with st.form(key=f"update_form_{ticket['id']}"):
                     submitted = st.form_submit_button("Update")
