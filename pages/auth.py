@@ -1,6 +1,5 @@
 import streamlit as st
 from models.user import User
-from utils.recaptcha import ReCaptcha
 from utils.gdpr import GDPRCompliance
 import json
 from utils.auth import login_user
@@ -12,8 +11,6 @@ def render_auth():
 
     tab1, tab2 = st.tabs(["Login", "Register"])
 
-    # Temporarily disabled reCAPTCHA
-    # recaptcha = ReCaptcha()
     gdpr = GDPRCompliance()
     user_model = User()
 
@@ -23,15 +20,6 @@ def render_auth():
         with st.form("login_form"):
             email = st.text_input("Email", key="login_email")
             password = st.text_input("Password", type="password", key="login_password")
-            
-            # reCAPTCHA integration is disabled for now
-            # Will be enabled once proper keys are configured
-            # st.components.v1.html(
-            #     recaptcha.render(),
-            #     height=100
-            # )
-            # Skip reCAPTCHA verification for now
-            recaptcha_verified = True
             
             submitted = st.form_submit_button("Login")
             if submitted:
@@ -53,9 +41,6 @@ def render_auth():
         
         # GDPR Consent
         consents = gdpr.render_consent_form()
-        
-        # reCAPTCHA temporarily disabled
-        # st.markdown(recaptcha.render(), unsafe_allow_html=True)
         
         if st.button("Register"):
             if not new_email or not new_password or not confirm_password:
