@@ -222,9 +222,12 @@ def render_tickets():
                     return False
                     
                 if 'value' in depends_on:  # Checkbox dependency
-                    return str(parent_value).lower() == str(depends_on['value']).lower()
+                    expected_value = str(depends_on['value']).lower() == 'true'
+                    actual_value = str(parent_value).lower() == 'true'
+                    return expected_value == actual_value
                 elif 'values' in depends_on:  # Dropdown/MultiSelect dependency
-                    return parent_value in depends_on['values']
+                    parent_values = parent_value.split(',') if isinstance(parent_value, str) else [parent_value]
+                    return any(str(v) in map(str, depends_on['values']) for v in parent_values)
                 return True
             
             # Helper function to render a single field
@@ -376,12 +379,18 @@ def render_tickets():
                             st.error(f"Error saving initial comment: {str(e)}")
                     
                     # Save custom field values
-                    for field_id, value in custom_field_values.items():
-                        if isinstance(value, (list, set)):
-                            value = ','.join(map(str, value))
-                        elif not isinstance(value, (str, int, float)):
-                            value = str(value)
-                        custom_field.save_field_value(new_ticket[0]['id'], field_id, value)
+                    for field in custom_fields:
+                        field_id = field['id']
+                        value = custom_field_values.get(field_id)
+                        
+                        # Only save fields that should be visible based on dependencies
+                        if should_show_field(field):
+                            if isinstance(value, (list, set)):
+                                value = ','.join(map(str, value))
+                            elif not isinstance(value, (str, int, float)):
+                                value = str(value)
+                            if value is not None:  # Only save non-None values
+                                custom_field.save_field_value(new_ticket[0]['id'], field_id, value)
                     
                     if uploaded_file:
                         file_handler.save_file(new_ticket[0]['id'], uploaded_file)

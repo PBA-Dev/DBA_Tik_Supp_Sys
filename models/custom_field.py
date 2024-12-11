@@ -25,7 +25,11 @@ class CustomField:
 
     def get_all_fields(self):
         query = """
-            SELECT * FROM custom_fields
+            SELECT id, field_name, field_type, field_options, is_required,
+                   validation_rules::json as validation_rules,
+                   help_text,
+                   depends_on::json as depends_on
+            FROM custom_fields
             ORDER BY field_name
         """
         return self.db.execute(query)
