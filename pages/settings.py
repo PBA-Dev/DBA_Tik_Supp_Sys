@@ -176,3 +176,13 @@ def render_settings():
                             st.rerun()
                         except Exception as e:
                             st.error(f"Failed to update field: {str(e)}")
+                            
+                    # Delete field button with confirmation
+                    if st.button("Delete Field", key=f"delete_{field['id']}", type="secondary"):
+                        if st.checkbox("Confirm deletion", key=f"confirm_delete_{field['id']}"):
+                            try:
+                                custom_field.delete_field(field['id'])
+                                st.success("Field deleted successfully")
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Failed to delete field: {str(e)}")

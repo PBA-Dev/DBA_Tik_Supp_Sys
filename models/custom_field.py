@@ -5,6 +5,16 @@ from psycopg2.extras import Json
 class CustomField:
     def __init__(self):
         self.db = Database()
+        
+    def delete_field(self, field_id):
+        """Delete a custom field and its associated values"""
+        # First delete the field values
+        query1 = "DELETE FROM ticket_custom_fields WHERE field_id = %s"
+        self.db.execute(query1, (field_id,))
+        
+        # Then delete the field itself
+        query2 = "DELETE FROM custom_fields WHERE id = %s"
+        return self.db.execute(query2, (field_id,))
 
     def create_field(self, field_name, field_type, field_options=None, is_required=False, validation_rules=None, help_text=None, depends_on=None):
         query = """
