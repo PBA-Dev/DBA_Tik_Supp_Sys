@@ -8,7 +8,7 @@ def render_settings():
     
     st.title("System Settings")
     
-    tab1, tab2, tab3 = st.tabs(["Email Settings", "File Upload Settings", "Custom Fields"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Email Settings", "File Upload Settings", "Custom Fields", "Audit Logs"])
     
     with tab1:
         st.subheader("Email Settings")
@@ -34,6 +34,33 @@ def render_settings():
             
     with tab3:
         st.subheader("Custom Fields")
+        
+    with tab4:
+        st.subheader("Audit Logs")
+        from db.database import Database
+        
+        db = Database()
+        query = """
+            SELECT al.*, u.email as user_email
+            FROM audit_logs al
+            LEFT JOIN users u ON al.user_id = u.id
+            ORDER BY al.created_at DESC
+            LIMIT 100
+        """
+        logs = db.execute(query)
+        
+        if not logs:
+            st.info("No audit logs found")
+        else:
+            for log in logs:
+                with st.expander(f"{log['operation'].upper()} {log['entity_type']} - {log['created_at'].strftime('%Y-%m-%d %H:%M')}"):
+                    st.write(f"Operation: {log['operation'].upper()}")
+                    st.write(f"Entity Type: {log['entity_type']}")
+                    st.write(f"Entity ID: {log['entity_id']}")
+                    if log['user_email']:
+                        st.write(f"User: {log['user_email']}")
+                    if log['details']:
+                        st.json(log['details'])
         custom_field = CustomField()
         
         # Create new custom field
