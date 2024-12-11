@@ -18,11 +18,23 @@ st.set_page_config(
     }
 )
 
+# Set security headers
+st.markdown("""
+    <script>
+        // Set security headers
+        if (window.trustedTypes && window.trustedTypes.createPolicy) {
+            window.trustedTypes.createPolicy('default', {
+                createHTML: (string) => string,
+                createScriptURL: (string) => string,
+                createScript: (string) => string
+            });
+        }
+    </script>
+""", unsafe_allow_html=True)
+
 def hide_streamlit_elements():
-    # Add security headers
+    # Add security headers and styling
     st.markdown("""
-        <meta http-equiv="Content-Security-Policy" 
-              content="default-src 'self'; frame-ancestors 'none';">
         <style>
         #MainMenu {visibility: hidden;}
         header {visibility: hidden;}
