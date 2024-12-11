@@ -4,6 +4,7 @@ from utils.auth import require_auth
 from models.ticket import Ticket
 from models.user import User
 from models.custom_field import CustomField
+from models.saved_filter import SavedFilter
 from components.rich_text import create_rich_text_editor
 from components.file_handler import FileHandler
 from utils.email import EmailNotifier
@@ -28,14 +29,69 @@ def render_tickets():
             user_role=st.session_state.user['role']
         )
         
-        # Filters
-        col1, col2, col3 = st.columns(3)
+        # Load saved filters
+        saved_filter_model = SavedFilter()
+        saved_filters = saved_filter_model.get_user_filters(st.session_state.user['id'])
+        
+        # Filters section
+        col1, col2, col3, col4 = st.columns([2, 2, 2, 3])
+        
         with col1:
             status_filter = st.selectbox("Status", ["All", "Open", "In Progress", "Closed"])
         with col2:
             priority_filter = st.selectbox("Priority", ["All", "Low", "Medium", "High"])
         with col3:
             search = st.text_input("Search tickets")
+            
+        # Saved filters interface
+        with col4:
+            if saved_filters:
+                selected_filter = st.selectbox(
+                    "Apply Saved Filter",
+                    ["None"] + [(f['id'], f['name']) for f in saved_filters],
+                    format_func=lambda x: x[1] if isinstance(x, tuple) else x
+                )
+                
+                if isinstance(selected_filter, tuple):
+                    filter_data = next(f for f in saved_filters if f['id'] == selected_filter[0])
+                    criteria = filter_data['filter_criteria']
+                    status_filter = criteria.get('status', status_filter)
+                    priority_filter = criteria.get('priority', priority_filter)
+                    search = criteria.get('search', search)
+                    
+            # Save current filter button and modal
+            if st.button("Save Current Filter"):
+                st.session_state.show_save_filter = True
+                
+        if getattr(st.session_state, 'show_save_filter', False):
+            with st.form("save_filter_form"):
+                filter_name = st.text_input("Filter Name")
+                is_macro = st.checkbox("Save as Macro")
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    save = st.form_submit_button("Save")
+                with col2:
+                    cancel = st.form_submit_button("Cancel")
+                
+                if save and filter_name:
+                    filter_criteria = {
+                        'status': status_filter,
+                        'priority': priority_filter,
+                        'search': search
+                    }
+                    saved_filter_model.create_filter(
+                        name=filter_name,
+                        user_id=st.session_state.user['id'],
+                        filter_criteria=filter_criteria,
+                        is_macro=is_macro
+                    )
+                    st.success(f"Filter '{filter_name}' saved successfully")
+                    del st.session_state.show_save_filter
+                    st.rerun()
+                elif cancel:
+                    del st.session_state.show_save_filter
+                    st.rerun()
         
         filtered_tickets = tickets
         if status_filter != "All":
