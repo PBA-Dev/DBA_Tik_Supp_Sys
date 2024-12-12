@@ -1,0 +1,25 @@
+# Version Control
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+.env
+
+# Docker
+Dockerfile
+docker-compose.yml
+
+# Misc
+.cache
+.pytest_cache
+.mypy_cache
+*.log
+.DS_Store
