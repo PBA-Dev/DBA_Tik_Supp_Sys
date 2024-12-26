@@ -13,9 +13,42 @@ class Database:
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(Database, cls).__new__(cls)
+            # Add validation before initialization
+            cls.validate_database_url()
             cls._instance._initialize_pool()
             cls._instance.create_tables()
         return cls._instance
+
+    @classmethod
+    def validate_database_url(cls):
+        """
+        Validate the DATABASE_URL environment variable.
+        Provides helpful error message if not set or improperly configured.
+        """
+        db_url = os.environ.get('DATABASE_URL')
+        if not db_url:
+            raise ValueError(
+                "DATABASE_URL environment variable is not set. "
+                "Please set it to a valid PostgreSQL connection string. "
+                "Example: postgresql://username:password@localhost:5432/database_name"
+            )
+        return db_url
+
+    @classmethod
+    def validate_database_url(cls):
+        """
+        Validate the DATABASE_URL environment variable.
+        Provides helpful error message if not set or improperly configured.
+        """
+        import os
+        db_url = os.environ.get('DATABASE_URL')
+        if not db_url:
+            raise ValueError(
+                "DATABASE_URL environment variable is not set. "
+                "Please set it to a valid PostgreSQL connection string. "
+                "Example: postgresql://username:password@localhost:5432/database_name"
+            )
+        return db_url
 
     def _initialize_pool(self):
         """Initialize the connection pool with retry logic"""
@@ -23,10 +56,12 @@ class Database:
         while retry_count < self._max_retries:
             try:
                 if self._pool is None or self._pool.closed:
+                    # Use the validated DATABASE_URL
+                    dsn = self.validate_database_url()
                     self._pool = psycopg2.pool.SimpleConnectionPool(
                         minconn=1,
                         maxconn=10,
-                        dsn=os.environ['DATABASE_URL'],
+                        dsn=dsn,
                         sslmode='require'
                     )
                 break
